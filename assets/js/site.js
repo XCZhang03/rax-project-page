@@ -140,6 +140,21 @@
     return c;
   }
 
+  /* ---------------- lightbox for program views ---------------- */
+  var lb = null;
+  function lightbox(src, cap) {
+    if (!lb) {
+      lb = el('div', { class: 'lb', role: 'dialog', 'aria-modal': 'true', tabindex: '-1' });
+      lb.appendChild(el('figure', {}, [el('img', { alt: '' }), el('figcaption')]));
+      lb.addEventListener('click', function () { lb.classList.remove('on'); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') lb.classList.remove('on'); });
+      document.body.appendChild(lb);
+    }
+    lb.querySelector('img').src = src; lb.querySelector('img').alt = cap;
+    lb.querySelector('figcaption').textContent = cap;
+    lb.classList.add('on'); lb.focus();
+  }
+
   /* ---------------- case card: one player for the session chapters and the program steps ---------------- */
   // groups: [{name, items:[{vid, poster, img, compare, tag, title, text, quote, branch, kicker, color, meta, chip, code:[line idx]}]}]
   // code: {file, lines:[{t, s:[step idx]}]} shown under the player; lines of the current program step are highlighted.
@@ -170,8 +185,9 @@
     var side = el('div', { class: 'cc-side' });
     var now = el('div', { class: 'pl-now', 'aria-live': 'polite' });
     var nav = el('div', { class: 'cc-nav' });
-    side.appendChild(now); side.appendChild(nav);
-    box.appendChild(media); box.appendChild(side);
+    side.appendChild(now);
+    var left = el('div', { class: 'cc-left' }, [media, nav]);
+    box.appendChild(left); box.appendChild(side);
     var dots = [];
     groups.forEach(function (g, gi) {
       var row = el('div', { class: 'cc-row' }, [el('span', { class: 'cc-g', text: g.name })]);
@@ -237,6 +253,19 @@
       if (it.text) now.appendChild(el('p', { text: it.text }));
       if (it.quote) now.appendChild(el('blockquote', { text: '“' + it.quote + '”' }));
       if (it.branch) now.appendChild(el('div', { class: 'branch', text: it.branch }));
+      if (it.viz) {
+        var vz = el('div', { class: 'cc-viz' + (it.viz.length > 1 ? ' two' : '') });
+        vz.appendChild(el('div', { class: 'cc-viz-k', text: 'Computed by its program' }));
+        var row = el('div', { class: 'cc-viz-row' });
+        it.viz.forEach(function (v) {
+          var b = el('button', { type: 'button', class: 'cc-viz-img', 'aria-label': 'Enlarge: ' + v.cap }, [el('img', { src: IMGP + v.img, alt: v.cap, loading: 'lazy' })]);
+          b.addEventListener('click', function () { lightbox(IMGP + v.img, v.cap); });
+          row.appendChild(b);
+        });
+        vz.appendChild(row);
+        vz.appendChild(el('p', { class: 'cc-viz-cap', text: it.viz.map(function (v) { return v.cap; }).join(' ') }));
+        now.appendChild(vz);
+      }
       tag.textContent = it.tag || ''; tag.hidden = !it.tag;
       still.innerHTML = '';
       if (it.vid) {
@@ -330,7 +359,7 @@
     function steps(prog, code) {
       var keys = Object.keys(prog.phases);
       return prog.steps.map(function (s, i) {
-        return { vid: s.vid, poster: s.poster, img: s.img, compare: s.compare, tag: s.tag, title: s.title, text: s.text, branch: s.branch,
+        return { vid: s.vid, poster: s.poster, img: s.img, compare: s.compare, tag: s.tag, title: s.title, text: s.text, branch: s.branch, viz: s.viz,
                  color: 'var(' + PH[keys.indexOf(s.phase) % PH.length] + ')', kicker: prog.phases[s.phase], code: linesFor(code, i) };
       });
     }
@@ -342,7 +371,7 @@
         if (i) lines.push({ t: '', s: [] });
         lines.push({ t: '# ' + (i + 1) + '. ' + st.title.toLowerCase() + '  (done ' + st.time + ')', s: [i] });
         st.code.forEach(function (c) { lines.push({ t: c, s: [i] }); });
-        return { vid: st.vid, poster: st.poster, img: st.img, tag: 'done at ' + st.time, title: st.title, text: '',
+        return { vid: st.vid, poster: st.poster, img: st.img, tag: 'done at ' + st.time, title: st.title, text: '', viz: st.viz,
                  color: 'var(' + SKV[k] + ')', kicker: 'calls ' + sk.name,
                  chip: function () {
                    var d = el('div', { class: 'pl-skill' });
