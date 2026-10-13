@@ -398,7 +398,13 @@
       var groups = [], code = null;
       var ch = chapters(t.key);
       if (ch.length) groups.push({ name: 'Session', items: ch });
-      if (t.key === 'rby1') {
+      if (t.key === 'boxing') {
+        code = D.boxing.code;
+        groups.push({ name: 'Program', items: D.boxing.steps.map(function (st, i) {
+          return { vid: st.vid, poster: st.poster, img: st.img, tag: st.tag, title: st.title, text: st.text, color: 'var(--ph-' + (1 + (i < 5 ? 0 : 2)) + ')',
+                   kicker: i < 5 ? 'perceive, map and plan' : 'act', code: linesFor(code, i) };
+        }) });
+      } else if (t.key === 'rby1') {
         var r = rby1(); code = r.code;
         groups.push({ name: 'Final run', items: r.items });
       } else {
@@ -408,6 +414,7 @@
       }
       var host = el('div'); body.appendChild(host);
       card = caseCard(host, groups, code);
+      if (!t.video) return;
       var det = el('details', { class: 'sess-full' });
       det.appendChild(el('summary', { text: 'Watch the full session video (' + t.length + ')' }));
       var v = el('video', { controls: '', preload: 'none', playsinline: '', poster: BASE + t.video + '_poster.jpg?v=1' });

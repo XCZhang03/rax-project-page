@@ -157,3 +157,4 @@ RAX.sessionTasks = [
   { key: 'rby1', video: 'rby1', name: 'RB-Y1: Six Chained Tasks', meta: 'Rainbow RB-Y1 · long-horizon, whole body · three runs', length: 'three runs',
     desc: 'One instruction, six steps across a room: park a chair, stack two cups, put the cups and a banana in a bucket, set the bucket on a cabinet, tuck the chair back, and place a box. The agent reuses skills it taught itself in earlier sessions and refines them after every run: 120, 117 and 98 minutes over three runs.' }
 ];
+if (RAX.boxing) RAX.sessionTasks.push({ key: 'boxing', video: null, name: 'Simulation: Boxing books', meta: RAX.boxing.task.meta, desc: RAX.boxing.task.desc });
