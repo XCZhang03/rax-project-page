@@ -505,12 +505,12 @@
         var BASE = 'https://assets.robot-agent-exploration.com/static/tasks/';
         var VER = '?v=1';
         var TASKS = [
+            {id: 'rby1', name: 'RB-Y1: Six Chained Tasks'},
             {id: 'find_the_cube', name: 'Find the Cube'},
             {id: 'air_fry_pan', name: 'Air Fryer'},
             {id: 'swipe_table', name: 'Wipe the Table'},
             {id: 'peg_insertion', name: 'Peg-in-Hole'},
-            {id: 'bandu', name: 'Bandu Tower'},
-            {id: 'rby1', name: 'RB-Y1: Six Chained Tasks'}
+            {id: 'bandu', name: 'Bandu Tower'}
         ];
         var tabs = document.getElementById('taskTabs');
         var video = document.getElementById('taskVideo');
@@ -565,13 +565,13 @@
     (function() {
         /* Figures from the paper, converted from their source PDFs to vector SVG. */
         var FIGS = [
+            {file: 'fig04_rby1', name: 'RB-Y1: Tidy Up a Lab Corner', alt: 'A long-horizon task on the real RB-Y1'},
+            {file: 'fig05_boxing', name: 'BEHAVIOR-1K: Boxing Books', alt: 'The program RAX writes for boxing books on BEHAVIOR-1K'},
             {file: 'fig23_cube_program', name: 'Find the Cube', alt: 'The find-the-cube program'},
             {file: 'fig24_airfry_program', name: 'Air Fryer', alt: 'The air-fryer program'},
             {file: 'fig29_wipe_program', name: 'Wipe the Table', alt: 'The wiping program'},
             {file: 'fig31_peg_program', name: 'Peg-in-Hole', alt: 'The peg-insertion procedure'},
-            {file: 'fig33_bandu_program', name: 'Bandu Tower', alt: 'The Bandu assembly program'},
-            {file: 'fig04_rby1', name: 'RB-Y1: Tidy Up a Lab Corner', alt: 'A long-horizon task on the real RB-Y1'},
-            {file: 'fig05_boxing', name: 'BEHAVIOR-1K: Boxing Books', alt: 'The program RAX writes for boxing books on BEHAVIOR-1K'}
+            {file: 'fig33_bandu_program', name: 'Bandu Tower', alt: 'The Bandu assembly program'}
         ];
         var tabs = document.getElementById('caseTabs');
         var img = document.getElementById('caseImg');
