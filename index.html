@@ -165,6 +165,47 @@
             color: var(--text-secondary);
         }
 
+        .task-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .task-tab {
+            padding: 6px 13px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .task-tab:hover { background: var(--border); }
+        .task-tab.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+        .task-info { margin-top: 14px; }
+        .task-info h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .task-meta {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .task-desc {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        .section-note {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
         footer {
             text-align: center;
             padding: 40px 0;
@@ -253,6 +294,63 @@
                 main.currentTime = currentTime;
                 if (wasPlaying) main.play();
             }, {once: true});
+        })();
+        </script>
+
+        <section id="tasks">
+            <h2>Real-Robot Sessions</h2>
+            <p class="section-note">
+                Each video is a full session: the agent explores the task on the real robot, makes mistakes,
+                fixes them, and turns what works into its own programs. No demonstrations, no teleoperation,
+                no policy training. Select a task to watch its session.
+            </p>
+            <div class="task-tabs" id="taskTabs"></div>
+            <div class="video-wrapper">
+                <video id="taskVideo" controls preload="none" playsinline></video>
+            </div>
+            <div class="task-info">
+                <h3 id="taskTitle"></h3>
+                <div class="task-meta" id="taskMeta"></div>
+                <p class="task-desc" id="taskDesc"></p>
+            </div>
+        </section>
+        <script>
+        (function() {
+            var BASE = 'https://assets.robot-agent-exploration.com/static/tasks/';
+            var VER = '?v=1';
+            var TASKS = [
+                {id: 'find_the_cube', name: 'Find the Cube', meta: 'Franka · memory · 2 h 35 min session',
+                 desc: 'The operator hides a cube under one of four cups, at one point dropping it into a cup, and shuffles them. The agent learns to watch the shuffle from above, to follow the cube by its shape and height in depth rather than by its appearance, and to lift the right cup and pick up the cube.'},
+                {id: 'air_fry_pan', name: 'Air Fryer', meta: 'Franka · articulated object · 2 h 46 min session',
+                 desc: 'Open a heavy air-fryer drawer, put a banana (and later a ball) inside, and close it. The agent searches for a collision-free grasp on the handle, works out how far to pull and how to drop the banana, and turns the routine into a program that runs unattended.'},
+                {id: 'swipe_table', name: 'Wipe the Table', meta: 'Franka · deformable object · 3 h 25 min session',
+                 desc: 'Wipe a soy-sauce stain with a wet towel, on an arm without a force sensor. The agent learns to grab a thick wad of cloth, to infer contact from where the cloth stalls the arm, and to check with its cameras that the table is really clean.'},
+                {id: 'peg_insertion', name: 'Peg-in-Hole', meta: 'Franka · precision · ManipulationNet board · 4 h 39 min session',
+                 desc: 'The ManipulationNet peg-in-hole board, with rows of 3 mm, 1 mm and 0.1 mm clearance. The agent registers the board to its CAD model, finds holes by touch, and develops a wiggle-push that seats all three pegs in the 0.1 mm-clearance row.'},
+                {id: 'bandu', name: 'Bandu Tower', meta: 'Franka · precision stacking · 6 h 6 min session',
+                 desc: 'Rebuild a tower of seven irregular wooden blocks, with the finished tower as the only demonstration. The agent measures each piece by touch while taking the tower apart, then writes a program that takes the tower apart and rebuilds it on its own.'},
+                {id: 'rby1', name: 'RB-Y1: Six Chained Tasks', meta: 'Rainbow RB-Y1 · long-horizon, whole body · three runs',
+                 desc: 'One instruction, six steps across a room: park a chair, stack two cups, put the cups and a banana in a bucket, set the bucket on a cabinet, tuck the chair back, and place a box. The agent reuses skills it taught itself in earlier sessions and refines them after every run: 120, 117 and 98 minutes over three runs.'}
+            ];
+            var tabs = document.getElementById('taskTabs');
+            var video = document.getElementById('taskVideo');
+            function show(i) {
+                var t = TASKS[i];
+                video.poster = BASE + t.id + '_poster.jpg' + VER;
+                video.src = BASE + t.id + '.mp4' + VER;
+                document.getElementById('taskTitle').textContent = t.name;
+                document.getElementById('taskMeta').textContent = t.meta;
+                document.getElementById('taskDesc').textContent = t.desc;
+                Array.prototype.forEach.call(tabs.children, function(b, j) { b.classList.toggle('active', j === i); });
+            }
+            TASKS.forEach(function(t, i) {
+                var b = document.createElement('button');
+                b.className = 'task-tab';
+                b.textContent = t.name;
+                b.addEventListener('click', function() { show(i); video.play(); });
+                tabs.appendChild(b);
+            });
+            show(0);
         })();
         </script>
 
