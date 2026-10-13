@@ -1,363 +1,175 @@
-// How RAX works: one session (the air fryer on the Franka), played as a sequence. The diagram and the
-// code panel advance together: the agent explores through tool calls, writes a program, the program runs
-// alone, hands control back when a check fails, and later runs need no agent at all.
+// How RAX works: the air-fryer session in four acts, each a clip of the raw left camera with what the
+// agent or its program was doing at the same moments (tool calls, the code it wrote, the fix, the program running).
 (function () {
   'use strict';
   var root = document.getElementById('howRoot');
-  if (!root) return;
-  var NS = 'http://www.w3.org/2000/svg';
-  var IMG = 'assets/img/';
+  if (!root || !window.RAX || !RAX.code || !RAX.code.airfry) return;
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  function sv(tag, attrs, parent) {
-    var e = document.createElementNS(NS, tag);
-    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
-    if (parent) parent.appendChild(e);
-    return e;
-  }
-  function txt(parent, x, y, s, cls, anchor) {
-    var t = sv('text', { x: x, y: y, class: cls || '', 'text-anchor': anchor || 'start' }, parent);
-    t.textContent = s;
-    return t;
-  }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function hms(s) { var p = s.split(':'); return +p[0] * 3600 + +p[1] * 60 + +(p[2] || 0); }
+  var PROG = RAX.code.airfry;
 
-  // The agent's tool calls in run 1, from the session log (local time).
-  var LOG = [
-    ['09:19:21', 'franka_observe()'],
-    ['', '  ← left, right, wrist: rgb + depth'],
-    ['09:19:41', "franka_pixel_to_position(camera='left', pixels=[[690, 250], …])"],
-    ['10:03:41', 'franka_move_pose(position=[0.48, -0.106, 0.356], quaternion=[…])'],
-    ['10:04:53', 'franka_move_pose(position=[0.490, -0.108, 0.256], …)'],
-    ['10:05:07', "franka_gripper('grasp', width=0.025, force=50)"],
-    ['10:05:25', 'franka_move_pose([-0.016, 0.013, 0], relative=True, tolerance_mm=5)'],
-    ['10:05:35', 'franka_move_pose([-0.023, 0.019, 0], relative=True, tolerance_mm=5)'],
-    ['10:18:57', "franka_gripper('grasp', width=0.02, force=20)   # banana"],
-    ['10:27:23', "franka_gripper('open')                          # drop it in"],
-    ['10:30:19', "franka_gripper('grasp', width=0.025, force=50)  # handle again"],
-    ['10:34:12', "franka_move_joints(preset='home')"],
-    ['10:36:18', "request_operator('Manual episode 1 succeeded (drawer opened ~12.6 cm, …)')"]
-  ];
-  // The program, condensed from the agent's code (as in the paper's architecture figure).
-  var PROG = [
-    ['', '# measured in the first manual run (m)'],
-    ['', 'GRASP_FROM_FACE, PULL = -0.0116, 0.125'],
-    ['', ''],
-    ['', 'def open_drawer(robot, frame):'],
-    ['perceive', '    # perceive: raw depth -> drawer geometry'],
-    ['perceive', '    P = backproject(frame)        # base frame'],
-    ['perceive', '    P = P[P.z > table_z(P) + .005]'],
-    ['perceive', '    lid = P[(P.z > .38) & (P.z < .44)]'],
-    ['perceive', '    c, r = robust_circle(lid.xy)  # axis'],
-    ['unsure', '    if not .045 < r < .08: raise Unsure()'],
-    ['perceive', '    H = P[(dist(P.xy,c) > r+.02) & (P.z<.2)]'],
-    ['perceive', '    d = unit(median(largest_cluster(H)) - c)'],
-    ['plan', '    # plan: check whole pull before moving'],
-    ['plan', '    g = c + (face(P, d) + GRASP_FROM_FACE)*d'],
-    ['plan', '    R = look_at(-d, up=Z)         # palm in'],
-    ['plan', '    q = robot.ik(g - .06*d, R)    # pre-grasp'],
-    ['plan', '    for s in arange(0, PULL, .01):'],
-    ['plan', '        q = robot.ik(g + s*d, R, seed=q)'],
-    ['plan', '        if q is None or margin(q) < .12:'],
-    ['unsure', '            raise Unsure()'],
-    ['act', '    # act: step-wise pull, then re-observe'],
-    ['act', '    robot.move_pose(g - .06*d, R)'],
-    ['act', '    robot.move_pose(g, R)'],
-    ['act', '    robot.grasp(.025, 50)'],
-    ['act', '    for s in arange(.03, PULL, .03):'],
-    ['act', '        robot.move_pose(g + s*d, R, tol_mm=5)'],
-    ['act', '    opened = face(observe(), d) - face(P, d)'],
-    ['unsure', '    if opened < PULL - .03: raise Unsure()']
-  ];
-
-  var STEPS = [
-    { t: 3800, clock: '09:18', title: 'A task in plain words',
-      text: 'The operator types the task. The agent starts with the robot’s tools and an empty workspace: no demonstrations, no model of the fryer.',
-      vid: 'how/h1_task', chip: 'Run 1, left camera', on: ['agent'], agent: 'reading the task', prog: 'not written yet',
-      mem: { wm: ['TASK.md'], notes: [], code: [] }, code: 'task' },
-    { t: 3900, clock: '09:19', title: 'It looks through tool calls',
-      text: 'Every observation is a tool call across the isolation boundary. The robot returns colour and depth from three cameras.',
-      vid: 'how/h2_look', img2: 'img/how/r1_depth.jpg', chip: 'Run 1: rgb, then the depth it gets back', on: ['agent', 'robot'],
-      flows: [['down', 'franka_observe()'], ['up', 'rgb + depth']], agent: 'exploring', prog: 'not written yet',
-      mem: { wm: ['→ franka_observe()', '← rgb + depth'], notes: [], code: [] }, code: 'log', log: 3 },
-    { t: 3700, clock: '10:05', title: 'It acts one call at a time',
-      text: 'The agent moves the arm itself, call by call: it lines up on the handle, grasps it at 50 N and pulls in small relative steps, looking again between moves.',
-      vid: 'how/h3_act', chip: 'Run 1: grasp and pull, call by call', on: ['agent', 'robot'],
-      flows: [['down', "franka_gripper('grasp')"], ['up', 'width, force'], ['down', 'franka_move_pose()']], agent: 'exploring', prog: 'not written yet',
-      mem: { wm: ['→ franka_gripper(grasp)', '→ franka_move_pose(...)'], notes: [], code: [] }, code: 'log', log: 8 },
-    { t: 7500, clock: '10:36', title: 'First success, and notes',
-      text: 'Run 1 succeeds after about 72 minutes of the agent’s own inference and 262 thousand output tokens. It writes what it measured into its notes.',
-      vid: 'how/h4_success', chip: 'Run 1: banana in, drawer closed', on: ['agent', 'mem'],
-      flows: [['write', 'notes']], agent: 'writing notes', prog: 'not written yet',
-      mem: { wm: ['← drawer closed'], notes: ['top 0.415 m, seam 0.245 m', 'drawer slides along d'], code: [] }, code: 'log', log: 13 },
-    { t: 5600, clock: '10:44', title: 'It compiles what worked into a program',
-      text: 'From its notes and measurements the agent writes a controller: its own perception, a plan checked before any motion, and the actions it found.',
-      vid: 'how/h5_code', chip: 'Run 2: controller v1 takes the handle', on: ['agent', 'mem', 'prog'],
-      flows: [['read', 'notes'], ['code', 'writes code']], agent: 'writing the code', prog: 'controller v1',
-      mem: { wm: ['← notes, measurements'], notes: ['top 0.415 m, seam 0.245 m', 'drawer slides along d'], code: ['airfry/controller.py v1'] }, code: 'type' },
-    { t: 3300, clock: 'run 9', title: 'The program runs alone: perceive',
-      text: 'Later runs need no agent in the loop. The program measures the fryer anew from depth: the lid circle gives the axis, the handle the pull direction.',
-      vid: 'prog/airfry_top', chip: 'Run 9, wrist camera: looking from above', on: ['prog', 'robot'], hl: 'perceive',
-      flows: [['run', 'observe()'], ['runup', 'rgb + depth']], agent: 'not in the loop', prog: 'running',
-      mem: { wm: [], notes: ['top 0.415 m, seam 0.245 m', 'drawer slides along d'], code: ['airfry/controller.py v9'] }, code: 'prog' },
-    { t: 3400, clock: 'run 9', title: 'Plan the whole pull before moving',
-      text: 'It solves inverse kinematics along the entire pull and checks the clearance before the arm moves at all.',
-      vid: 'prog/airfry_grasp', chip: 'Run 9: to the handle, program alone', on: ['prog'], hl: 'plan',
-      flows: [], agent: 'not in the loop', prog: 'running',
-      mem: { wm: [], notes: ['top 0.415 m, seam 0.245 m', 'drawer slides along d'], code: ['airfry/controller.py v9'] }, code: 'prog' },
-    { t: 3500, clock: 'run 9', title: 'Act, then measure again',
-      text: 'It grasps the handle at 50 N, pulls in 3 cm steps, and measures the opening from the shift of the handle face: 12.7 cm.',
-      vid: 'prog/airfry_pull', chip: 'Run 9: pull, opened 12.7 cm', on: ['prog', 'robot'], hl: 'act',
-      flows: [['run', 'robot.grasp(.025, 50)'], ['run', 'robot.move_pose()']], agent: 'not in the loop', prog: 'running',
-      mem: { wm: [], notes: ['top 0.415 m, seam 0.245 m', 'drawer slides along d'], code: ['airfry/controller.py v9'] }, code: 'prog' },
-    { t: 4600, clock: 'run 5', title: 'Not sure? It hands control back',
-      text: 'Every check that fails stops the program and returns control to the agent. In run 5 the close step stopped 3.7 mm short of the handle; the agent made that descent tolerant and resumed from the close step.',
-      vid: 'how/h9_unsure', chip: 'Run 5: the close step stops at the handle', on: ['agent', 'prog'], hl: 'unsure', warn: true,
-      flows: [['unsure', 'Unsure()'], ['code', 'fix, resume']], agent: 'fixing the code', prog: 'stopped',
-      mem: { wm: ['← Unsure(): close step'], notes: ['top 0.415 m, seam 0.245 m', 'drawer slides along d'], code: ['airfry/controller.py v4'] }, code: 'prog' },
-    { t: 4600, clock: '11:26–12:05', title: 'Unattended, and fast',
-      text: 'Runs 6, 7, 9 and 10 succeed with no one stepping in, with the fryer moved and rotated between them. Each takes 18 to 23 s of inference, against 72 minutes when the agent acted itself.',
-      vid: 'how/h10_unattended', chip: 'Run 10: banana and ball, unattended', on: ['prog', 'robot', 'mem'], speed: true,
-      flows: [['run', 'program'], ['runup', 'done']], agent: 'watching', prog: 'verified',
-      mem: { wm: [], notes: ['top 0.415 m, seam 0.245 m', 'RUNS.md: 6, 7, 9, 10 clean'], code: ['airfry/controller.py v10'] }, code: 'prog' }
+  // Wall-clock times are EDT; each clip lists its segments [start, end, speed].
+  var ACTS = [
+    { title: 'Explore with tool calls', sub: 'the agent drives the robot', vid: 'how/a1_explore', when: 'Run 1, 09:19–10:36',
+      segs: [['09:19:15', '09:19:45', 10], ['10:03:35', '10:06:20', 48], ['10:18:45', '10:19:30', 18], ['10:26:45', '10:27:35', 20], ['10:30:05', '10:34:15', 100]],
+      text: 'The agent itself moves the arm, one tool call at a time: it looks, lines up on the handle, grasps it at 50 N, pulls the drawer, drops the banana in and pushes the drawer shut.',
+      stat: '72 min of the agent’s own inference, 262k output tokens', mode: 'feed', head: 'The agent’s tool calls, in step with the clip',
+      feed: [
+        ['09:19:21', 'call', 'franka_observe()  → left, right, wrist: rgb + depth'],
+        ['09:19:41', 'call', "franka_pixel_to_position(camera='left', pixels=[[690, 250], …])"],
+        ['10:03:41', 'call', 'franka_move_pose([0.48, -0.106, 0.356], quaternion=[…])'],
+        ['10:04:53', 'call', 'franka_move_pose([0.490, -0.108, 0.256], …)'],
+        ['10:05:07', 'call', "franka_gripper('grasp', width=0.025, force=50)"],
+        ['10:05:25', 'call', 'franka_move_pose([-0.016, 0.013, 0], relative=True, tolerance_mm=5)'],
+        ['10:05:35', 'call', 'franka_move_pose([-0.023, 0.019, 0], relative=True, tolerance_mm=5)'],
+        ['10:18:57', 'call', "franka_gripper('grasp', width=0.02, force=20)   # banana"],
+        ['10:27:23', 'call', "franka_gripper('open')   # drop it in"],
+        ['10:30:19', 'call', "franka_gripper('grasp', width=0.025, force=50)   # handle again"],
+        ['10:34:12', 'call', "franka_move_joints(preset='home')"],
+        ['10:36:18', 'call', "request_operator('Manual episode 1 succeeded (drawer opened ~12.6 cm, …)')"]
+      ] },
+    { title: 'Write the program', sub: 'from what worked', vid: 'how/a2_program', when: '10:36–10:44', hold: 7000,
+      text: 'It turns what it measured in run 1 into a controller: its own perception, a plan checked before any motion, and the actions that worked. About 1,500 lines of Python, condensed here.',
+      stat: 'Clip: run 2, the first controller takes the handle', mode: 'type' },
+    { title: 'Hand back when unsure', sub: 'a failed check stops it', vid: 'how/a3_unsure', when: 'Run 5, 11:22–11:25',
+      segs: [['11:22:30', '11:25:06', 30]],
+      text: 'Every check that fails stops the program and returns control to the agent. Here the arm stopped 3.7 mm short of the handle; the agent made that descent tolerant and resumed from the close step.',
+      stat: 'Resumed close step: 81 s, handle 1.5 mm from where it began', mode: 'feed', head: 'What happened, in step with the clip',
+      feed: [
+        ['11:22:37', 'call', 'franka_move_joints([…])   # above the handle'],
+        ['11:22:52', 'call', 'franka_move_pose([0.391, -0.032, 0.223], timeout_s=15, …)'],
+        ['11:22:52', 'error', 'TimeoutError: pose not reached in 15.0s: position error 3.7 mm'],
+        ['11:22:52', 'error', 'the controller stops (report ok = False); control returns to the agent'],
+        ['11:23:15', 'edit', 'edit code/airfry/controller.py: descend_to_grasp', 1],
+        ['11:23:15', 'edit', '+ ok, rep = robot.try_move_pose(grasp, quat, tol_mm=3, timeout_s=10)', 1],
+        ['11:23:15', 'edit', '+ acceptable = np.linalg.norm(e) < 0.008   # residual < 8 mm', 1],
+        ['11:23:42', 'run', 'python code/airfry/controller.py --steps close --resume 20261004T112042'],
+        ['11:24:11', 'say', 'descent residual 6.6 mm: within tolerance'],
+        ['11:24:11', 'call', "franka_gripper('grasp', width=0.025, force=50)"],
+        ['11:24:16', 'call', 'franka_move_pose(…)   # push the drawer, 4 steps'],
+        ['11:25:03', 'ok', 'close: ok, face shift 1.5 mm']
+      ] },
+    { title: 'The program runs alone', sub: 'no agent in the loop', vid: 'how/a4_alone', when: 'Run 9, 11:50, fryer rotated',
+      segs: [['11:50:07.4', '11:52:55', 12]],
+      text: 'The program perceives the fryer anew, plans the whole pull before it moves, opens the drawer, drops the banana, closes it, and checks every step. The arrow follows the line it is running.',
+      stat: '178 s unattended; 18–23 s of inference per run, against 72 min in run 1', mode: 'run',
+      // seconds after the run start -> line of the condensed program, from the run's own call log
+      sched: [[0, 0], [2, 1], [7.6, 2], [9, 3], [11, 4], [12, 5], [13, 6], [14, 7], [15, 9], [18, 10], [25.5, 11], [27, 12], [30, 13],
+              [36, 14], [37, 15], [43.6, 16], [48, 17], [52, 18], [61.3, 19], [72, 20], [90, 21], [97.7, 22], [109.6, 23], [111, 24],
+              [114, 26], [118, 27], [124, 28], [135.5, 29], [146, 30], [150, 31], [163.1, 32], [166, 33]] }
   ];
 
-  /* ---------- diagram ---------- */
-  var svg = root.querySelector('svg.how-svg');
-  svg.setAttribute('viewBox', '0 0 600 432');
-  var defs = sv('defs', {}, svg);
-  var mk = sv('marker', { id: 'howArrow', viewBox: '0 0 8 8', refX: 7, refY: 4, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }, defs);
-  sv('path', { d: 'M0,0 L8,4 L0,8 z', class: 'hw-arrowhead' }, mk);
-
-  function node(x, y, w, h, cls) {
-    var g = sv('g', { class: 'hw-node ' + (cls || '') }, svg);
-    sv('rect', { x: x, y: y, width: w, height: h, rx: 12 }, g);
-    return g;
-  }
-  // Memory
-  var gMem = node(10, 14, 168, 128, 'mem');
-  txt(gMem, 24, 38, 'Memory', 'hw-title');
-  txt(gMem, 24, 58, 'Working memory', 'hw-k');
-  var wmT = [txt(gMem, 24, 73, '', 'hw-mono'), txt(gMem, 24, 86, '', 'hw-mono')];
-  txt(gMem, 24, 104, 'Notes · code', 'hw-k');
-  var noteT = [txt(gMem, 24, 119, '', 'hw-mono'), txt(gMem, 24, 132, '', 'hw-mono')];
-  // Agent
-  var gAgent = node(224, 14, 152, 128, 'agent');
-  txt(gAgent, 300, 48, 'Coding agent', 'hw-title inv', 'middle');
-  txt(gAgent, 300, 67, 'frozen LLM', 'hw-sub inv', 'middle');
-  var agentPill = sv('rect', { x: 236, y: 86, width: 128, height: 26, rx: 13, class: 'hw-pill' }, gAgent);
-  var agentS = txt(gAgent, 300, 103, '', 'hw-status inv', 'middle');
-  // Program
-  var gProg = node(422, 14, 168, 128, 'prog');
-  txt(gProg, 436, 38, 'Robot program', 'hw-title');
-  txt(gProg, 436, 58, 'open_drawer(), close()', 'hw-mono');
-  var progS = txt(gProg, 436, 84, '', 'hw-status');
-  var progV = txt(gProg, 436, 128, '', 'hw-mono muted');
-  // boundary
-  sv('line', { x1: 10, x2: 590, y1: 164, y2: 164, class: 'hw-boundary' }, svg);
-  txt(svg, 12, 158, 'isolation boundary', 'hw-k muted', 'start');
-  // Robot
-  var gRobot = node(96, 178, 408, 237, 'robot');
-  txt(svg, 22, 300, 'Franka FR3', 'hw-k', 'start');
-  txt(svg, 22, 315, 'arm, gripper,', 'hw-sub2');
-  txt(svg, 22, 328, '3 RGB-D cameras', 'hw-sub2');
-
-  // edges
-  var P = {
-    write: 'M222,64 H180', read: 'M180,92 H222',
-    code: 'M378,56 H420', unsure: 'M420,104 H378',
-    down: 'M280,142 V178', up: 'M320,178 V142',
-    run: 'M556,142 V300 H504', runup: 'M504,330 H572 V142'
-  };
-  var edges = {};
-  Object.keys(P).forEach(function (k) {
-    edges[k] = sv('path', { d: P[k], class: 'hw-edge' + (k === 'unsure' ? ' dashed' : ''), 'marker-end': 'url(#howArrow)' }, svg);
-  });
-  var edgeLabels = [
-    [201, 56, 'write', 'middle'], [201, 108, 'read', 'middle'], [399, 48, 'code', 'middle'], [399, 120, 'Unsure()', 'middle'],
-    [274, 160, 'calls', 'end'], [326, 160, 'observations', 'start'], [529, 222, 'runs', 'middle'], [529, 235, 'alone', 'middle']
-  ];
-  edgeLabels.forEach(function (l) { txt(svg, l[0], l[1], l[2], 'hw-elab', l[3]); });
-  var packets = sv('g', {}, svg);
-
-  /* ---------- side panel ---------- */
-  var codeHead = root.querySelector('.how-code-head');
-  var codeBody = root.querySelector('.how-code');
-  var capK = root.querySelector('.how-cap .k');
-  var capH = root.querySelector('.how-cap h3');
-  var capP = root.querySelector('.how-cap p');
-  var speed = root.querySelector('.how-speed');
-  var dots = root.querySelector('.how-dots');
-  var playBtn = root.querySelector('.how-play');
-
-  STEPS.forEach(function (s, i) {
+  var actsEl = root.querySelector('.acts'), video = root.querySelector('video'), tag = root.querySelector('.pl-tag');
+  var bar = root.querySelector('.pl-progress span'), btn = root.querySelector('.pl-btn');
+  var capK = root.querySelector('.how-k'), capH = root.querySelector('.how-h'), capP = root.querySelector('.how-p'), capS = root.querySelector('.how-stat');
+  var head = root.querySelector('.cc-code-head'), pre = root.querySelector('.cc-pre'), feedEl = root.querySelector('.cc-feed');
+  var KIND = { call: 'robot', run: 'shell', edit: 'edit', say: 'agent', error: 'stop', ok: 'done' };
+  var acts = ACTS.map(function (a, i) {
     var b = document.createElement('button');
     b.type = 'button';
-    b.setAttribute('aria-label', 'Step ' + (i + 1) + ': ' + s.title);
-    b.appendChild(document.createElement('span'));
-    b.addEventListener('click', function () { go(i, true); });
-    dots.appendChild(b);
+    b.innerHTML = '<b>' + (i + 1) + '</b><span><strong>' + esc(a.title) + '</strong><em>' + esc(a.sub) + '</em></span><i></i>';
+    b.addEventListener('click', function () { go(i); });
+    var li = document.createElement('li'); li.appendChild(b); actsEl.appendChild(li);
+    return b;
   });
-
-  function hlProg(line) {
-    var code = line[1], hash = code.indexOf('#');
-    var body = hash >= 0 ? code.slice(0, hash) : code, com = hash >= 0 ? code.slice(hash) : '';
-    var h = esc(body).replace(/\b(def|for|in|if|not|is|None|or)\b/g, '<span class="kw">$1</span>')
-      .replace(/raise Unsure\(\)/g, '<span class="err">raise Unsure()</span>');
-    return h + (com ? '<span class="c">' + esc(com) + '</span>' : '');
+  function hl(code) {
+    var h = code.indexOf('#'), body = h >= 0 ? code.slice(0, h) : code, com = h >= 0 ? code.slice(h) : '';
+    return esc(body).replace(/\b(def|for|in|if|not|is|None|or|and|return|raise|else)\b/g, '<span class="kw">$1</span>')
+      .replace(/(StepFailure)/g, '<span class="err">$1</span>') + (com ? '<span class="c">' + esc(com) + '</span>' : '');
   }
-  function renderCode(s, frac) {
-    if (s.code === 'task') {
-      codeHead.textContent = 'TASK.md';
-      codeBody.className = 'how-code task';
-      codeBody.innerHTML = '<span class="ln">You should open the air fry pan, put the banana inside, and close it.</span>' +
-        '<span class="ln">Reminder: the plate is really heavy and you should figure out where to grasp</span>' +
-        '<span class="ln">and the force applied. […] maybe not pull out the plate entirely […]</span>';
-      return;
+  pre.innerHTML = PROG.lines.map(function (l) { return '<span class="ln">' + (hl(l.t) || ' ') + '</span>'; }).join('');
+  var lines = Array.prototype.slice.call(pre.children);
+
+  var cur = 0, playing = !reduced, visible = false, holdTimer = null, t0 = 0, raf = null, feedLines = [], shown = -1, ptr = -1, typed = -1;
+  // wall-clock seconds at time t of the clip
+  function wallAt(a, t) {
+    var acc = 0;
+    for (var i = 0; i < a.segs.length; i++) {
+      var s = a.segs[i], len = (hms(s[1]) - hms(s[0])) / s[2];
+      if (t <= acc + len || i === a.segs.length - 1) return hms(s[0]) + Math.min(t - acc, len) * s[2];
+      acc += len;
     }
-    if (s.code === 'log') {
-      codeHead.textContent = 'Run 1: the agent’s own tool calls';
-      codeBody.className = 'how-code log';
-      codeBody.innerHTML = LOG.map(function (l, i) {
-        var cls = 'ln' + (i < s.log ? ' shown' : '') + (i >= (s.prevLog || 0) && i < s.log ? ' fresh' : '');
-        return '<span class="' + cls + '"><span class="tm">' + esc(l[0]) + '</span>' + esc(l[1]) + '</span>';
+  }
+  function render() {
+    var a = ACTS[cur];
+    acts.forEach(function (b, j) { b.setAttribute('aria-current', j === cur ? 'step' : 'false'); b.classList.toggle('done', j < cur); b.querySelector('i').style.width = j < cur ? '100%' : '0%'; });
+    capK.textContent = 'Act ' + (cur + 1) + ' of 4 · ' + a.when;
+    capH.textContent = a.title;
+    capP.textContent = a.text;
+    capS.textContent = a.stat;
+    tag.textContent = a.when;
+    video.loop = !!a.hold;
+    var src = 'assets/vid/' + a.vid + '.mp4';
+    if (video.getAttribute('src') !== src) { video.poster = 'assets/vid/' + a.vid + '.jpg'; video.src = src; }
+    else { try { video.currentTime = 0; } catch (e) { /* not loaded yet */ } }
+    pre.hidden = a.mode === 'feed'; feedEl.hidden = a.mode !== 'feed';
+    shown = -1; ptr = -1; typed = -1;
+    if (a.mode === 'feed') {
+      head.textContent = a.head;
+      feedEl.innerHTML = a.feed.map(function (l) {
+        var t = esc(l[2]);
+        if (l[1] === 'edit' && /^[+-] /.test(l[2])) t = '<span class="add">' + t + '</span>';
+        return '<span class="fl k-' + l[1] + '"><span class="tm">' + (l[3] ? '' : l[0]) + '</span><span class="kd">' + KIND[l[1]] + '</span><span class="tx">' + t + '</span></span>';
       }).join('');
-      var last = codeBody.querySelectorAll('.ln.shown');
-      if (last.length) codeBody.scrollTop = last[last.length - 1].offsetTop - codeBody.clientHeight + 30;
-      return;
+      feedLines = Array.prototype.slice.call(feedEl.children);
+    } else {
+      head.textContent = (a.mode === 'type' ? 'Writing ' : 'Running ') + PROG.file + ' (condensed)';
+      pre.classList.toggle('typing', a.mode === 'type');
+      pre.classList.toggle('focus', a.mode === 'run');
+      lines.forEach(function (l) { l.classList.remove('cur', 'on', 'shown'); });
+      pre.scrollTop = 0;
     }
-    codeHead.textContent = 'airfry/controller.py, condensed from the agent’s code';
-    codeBody.className = 'how-code pcode' + (s.hl ? ' focus' : '');
-    var n = s.code === 'type' ? Math.floor(PROG.length * Math.min(1, frac)) : PROG.length;
-    codeBody.innerHTML = PROG.map(function (l, i) {
-      var cls = 'ln ' + l[0] + (i < n ? ' shown' : '') + (s.hl && l[0] === s.hl ? ' on' : '');
-      return '<span class="' + cls + '">' + (hlProg(l) || ' ') + '</span>';
-    }).join('');
-    var first = codeBody.querySelector('.ln.on');
-    var target = first ? Math.max(0, first.offsetTop - codeBody.offsetTop - 24) : 0;
-    if (s.code !== 'type' || frac >= 1) codeBody.scrollTo({ top: target, behavior: reduced ? 'auto' : 'smooth' });
+    progress(0, 0);
+    arm();
   }
-
-  // The robot's camera: an HTML video laid over the robot box of the diagram.
-  var fig = root.querySelector('.how-figure');
-  var vid = document.createElement('video');
-  vid.className = 'how-vid'; vid.muted = true; vid.loop = true; vid.playsInline = true; vid.setAttribute('playsinline', ''); vid.preload = 'auto';
-  var still = document.createElement('img'); still.className = 'how-vid how-still'; still.alt = '';
-  var chip = document.createElement('span'); chip.className = 'how-chip';
-  var warnBox = document.createElement('span'); warnBox.className = 'how-warnbox';
-  fig.appendChild(vid); fig.appendChild(still); fig.appendChild(chip); fig.appendChild(warnBox);
-  function setMedia(s) {
-    still.classList.remove('on');
-    var src = 'assets/vid/' + s.vid + '.mp4';
-    if (vid.getAttribute('src') !== src) { vid.poster = 'assets/vid/' + s.vid + '.jpg'; vid.src = src; }
-    vid.currentTime = 0;
-    if (playing && visible) { var p = vid.play(); if (p && p.catch) p.catch(function () {}); }
-    if (s.img2) { still.src = 'assets/' + s.img2; later(function () { still.classList.add('on'); }, s.t * 0.55); }
-  }
-
-  var timers = [];
-  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-  function clearTimers() { timers.forEach(clearTimeout); timers = []; packets.innerHTML = ''; }
-
-  function packet(key, label, delay, warn) {
-    if (['write', 'read', 'code', 'unsure'].indexOf(key) >= 0) label = '';
-    later(function () {
-      var path = edges[key], L = path.getTotalLength();
-      var g = sv('g', { class: 'hw-packet' + (warn ? ' warn' : '') }, packets);
-      sv('circle', { r: 5 }, g);
-      var tw = Math.max(40, label.length * 6.3 + 12);
-      var r = sv('rect', { height: 18, width: tw, rx: 9, x: 8, y: -9 }, g);
-      var t = txt(g, 14, 4, label, 'hw-ptext');
-      if (!label) { r.remove(); t.remove(); }
-      if (key === 'write' || key === 'unsure') { r.setAttribute('x', -8 - tw); t.setAttribute('x', -2 - tw); }
-      if (key === 'down' || key === 'up') { r.setAttribute('x', key === 'down' ? -8 - tw : 8); t.setAttribute('x', key === 'down' ? -2 - tw : 14); }
-      if (key === 'run' || key === 'runup') { r.setAttribute('x', key === 'run' ? -8 - tw : 8); t.setAttribute('x', key === 'run' ? -2 - tw : 14); }
-      var t0 = performance.now(), dur = 1100;
-      (function step(now) {
-        var k = Math.min(1, (now - t0) / dur);
-        var e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-        var p = path.getPointAtLength(e * L);
-        g.setAttribute('transform', 'translate(' + p.x + ',' + p.y + ')');
-        g.setAttribute('opacity', k > 0.85 ? (1 - k) / 0.15 : 1);
-        if (k < 1) requestAnimationFrame(step); else g.remove();
-      })(t0);
-    }, delay);
-  }
-
-  var cur = -1, playing = false, visible = false, stepStart = 0, raf = null, lastTyped = -1;
-  function go(i, user) {
-    clearTimers();
-    cur = i;
-    var s = STEPS[i];
-    s.prevLog = i > 0 && STEPS[i - 1].code === 'log' ? STEPS[i - 1].log : 0;
-    Array.prototype.forEach.call(dots.children, function (b, j) {
-      b.classList.toggle('done', j < i);
-      b.setAttribute('aria-current', j === i ? 'step' : 'false');
-      b.firstChild.style.transition = 'none';
-      b.firstChild.style.width = j < i ? '100%' : '0%';
-    });
-    capK.textContent = (i + 1) + ' / ' + STEPS.length + ' · ' + s.clock;
-    capH.textContent = s.title;
-    capP.textContent = s.text;
-    speed.hidden = !s.speed;
-    [['agent', gAgent], ['mem', gMem], ['prog', gProg], ['robot', gRobot]].forEach(function (p) {
-      p[1].classList.toggle('on', s.on.indexOf(p[0]) >= 0);
-    });
-    fig.classList.toggle('robot-off', s.on.indexOf('robot') < 0);
-    gAgent.classList.toggle('idle', s.agent === 'not in the loop');
-    agentS.textContent = s.agent;
-    progS.textContent = s.prog;
-    gProg.classList.toggle('warn', s.prog === 'stopped');
-    gProg.classList.toggle('empty', s.prog === 'not written yet');
-    progV.textContent = s.mem.code[0] || '';
-    wmT.forEach(function (t, k) { t.textContent = s.mem.wm[k] || ''; });
-    var notes = s.mem.notes.concat(s.mem.code.length && s.mem.notes.length < 2 ? s.mem.code : []);
-    noteT.forEach(function (t, k) { t.textContent = notes[k] || ''; });
-    Object.keys(edges).forEach(function (k) { edges[k].classList.remove('live'); });
-    (s.flows || []).forEach(function (f) { edges[f[0]].classList.add('live'); });
-    warnBox.classList.toggle('on', !!s.warn);
-    chip.textContent = s.chip;
-    setMedia(s);
-    var flows = s.flows || [];
-    if (!reduced) {
-      var gap = Math.max(900, (s.t - 600) / Math.max(1, flows.length));
-      flows.forEach(function (f, k) { packet(f[0], f[1], 250 + k * gap, f[0] === 'unsure'); });
+  function progress(k, t) {
+    bar.style.width = (k * 100) + '%';
+    acts[cur].querySelector('i').style.width = (k * 100) + '%';
+    var a = ACTS[cur];
+    if (a.mode === 'feed') {
+      var w = wallAt(a, t || 0), want = -1;
+      a.feed.forEach(function (l, j) { if (hms(l[0]) <= w + 0.5) want = j; });
+      if (k >= 0.98) want = a.feed.length - 1;
+      if (want === shown) return;
+      feedLines.forEach(function (l, j) { l.classList.toggle('shown', j <= want); l.classList.toggle('new', j === want); });
+      shown = want;
+      if (want >= 0) { var last = feedLines[want]; feedEl.scrollTop = Math.max(0, last.offsetTop - feedEl.offsetTop - feedEl.clientHeight + last.offsetHeight + 12); }
+    } else if (a.mode === 'type') {
+      var n = Math.min(lines.length, Math.ceil(k * 1.15 * lines.length));
+      if (n === typed) return;
+      lines.forEach(function (l, j) { l.classList.toggle('shown', j < n); });
+      typed = n;
+      if (n > 0) { var ln = lines[n - 1]; pre.scrollTop = Math.max(0, ln.offsetTop - pre.offsetTop - pre.clientHeight + 40); }
+    } else {
+      var rt = wallAt(a, t || 0) - hms(a.segs[0][0]), q = 0;
+      a.sched.forEach(function (s) { if (s[0] <= rt) q = s[1]; });
+      if (q === ptr) return;
+      lines.forEach(function (l, j) { l.classList.toggle('on', j <= q); l.classList.toggle('cur', j === q); });
+      ptr = q;
+      var c = lines[q];
+      pre.scrollTo({ top: Math.max(0, c.offsetTop - pre.offsetTop - pre.clientHeight / 2), behavior: reduced ? 'auto' : 'smooth' });
     }
-    renderCode(s, s.code === 'type' ? (reduced || !playing ? 1 : 0) : 1);
-    stepStart = performance.now();
-    lastTyped = -1;
-    if (user && !playing) { renderCode(s, 1); }
   }
-
-  function tick(now) {
-    raf = requestAnimationFrame(tick);
-    if (!playing || !visible || cur < 0 || document.hidden) return;
-    var s = STEPS[cur], k = (now - stepStart) / s.t;
-    var bar = dots.children[cur].firstChild;
-    bar.style.transition = 'none';
-    bar.style.width = Math.min(100, k * 100) + '%';
-    if (s.code === 'type') { var n = Math.floor(PROG.length * Math.min(1, k / 0.8)); if (n !== lastTyped) { lastTyped = n; renderCode(s, k / 0.8); } }
-    if (k >= 1) go((cur + 1) % STEPS.length);
+  function tickHold(now) {
+    var k = Math.min(1, (now - t0) / ACTS[cur].hold);
+    progress(k);
+    if (k < 1) raf = requestAnimationFrame(tickHold);
   }
-  function setPlaying(p) {
-    playing = p;
-    playBtn.setAttribute('aria-label', p ? 'Pause' : 'Play');
-    playBtn.classList.toggle('paused', !p);
+  function arm() {
+    clearTimeout(holdTimer); cancelAnimationFrame(raf);
+    if (!playing || !visible) { video.pause(); return; }
+    var p = video.play(); if (p && p.catch) p.catch(function () {});
+    if (ACTS[cur].hold) { t0 = performance.now(); raf = requestAnimationFrame(tickHold); holdTimer = setTimeout(next, ACTS[cur].hold); }
   }
-  playBtn.addEventListener('click', function () {
-    setPlaying(!playing);
-    if (!playing) vid.pause();
-    if (playing) { go(cur < 0 ? 0 : cur); }
-  });
-  go(0);
+  function next() { go((cur + 1) % ACTS.length); }
+  function go(i) { cur = i; render(); }
+  video.addEventListener('timeupdate', function () { if (!ACTS[cur].hold && video.duration) progress(video.currentTime / video.duration, video.currentTime); });
+  video.addEventListener('ended', function () { if (ACTS[cur].hold) return; progress(1, video.duration); if (playing && visible) holdTimer = setTimeout(next, 900); });
+  function sync() { btn.classList.toggle('paused', !playing); btn.setAttribute('aria-label', playing ? 'Pause' : 'Play'); }
+  btn.addEventListener('click', function () { playing = !playing; sync(); arm(); });
   if ('IntersectionObserver' in window) {
-    new IntersectionObserver(function (es) {
-      var was = visible;
-      visible = es[0].isIntersecting;
-      if (visible && !was && playing) go(cur < 0 ? 0 : cur);
-      if (!visible) vid.pause();
-    }, { threshold: 0.35 }).observe(root);
+    new IntersectionObserver(function (es) { var v = es[0].isIntersecting; if (v !== visible) { visible = v; arm(); } }, { threshold: 0.3 }).observe(video);
   } else { visible = true; }
-  setPlaying(!reduced);
-  raf = requestAnimationFrame(tick);
+  sync(); render();
 })();

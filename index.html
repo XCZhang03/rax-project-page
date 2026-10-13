@@ -156,31 +156,28 @@
     <section class="block" id="how">
         <div class="wrap">
             <h2>How RAX works</h2>
-            <p class="lead">One real session on the Franka, played step by step: the agent explores the air fryer through tool calls, compiles what worked into a program, and the program then runs on its own, handing control back to the agent when a check fails.</p>
-            <div class="card how" id="howRoot">
-                <div class="how-left">
-                    <div class="how-figure"><svg class="how-svg" role="img" aria-label="Diagram of the coding agent, its memory, the robot program and the robot, with the active connections of the current step"></svg></div>
-                    <div class="how-bar">
-                        <button type="button" class="how-play" aria-label="Pause">
-                            <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-                            <svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                        </button>
-                        <div class="how-dots" role="group" aria-label="Steps"></div>
+            <p class="lead">A coding agent learns a task on a real robot in four acts. Watch it on the air fryer: first the agent drives the arm itself through tool calls; then it writes what worked into a program; when one of the program&rsquo;s checks fails, control comes back to the agent to fix it; in the end the program runs on its own. Each clip is the robot&rsquo;s left camera; below it, what the agent or its program was doing at the same moments.</p>
+            <div class="card how2" id="howRoot">
+                <ol class="acts" aria-label="Four acts"></ol>
+                <div class="cc">
+                    <div class="pl-media">
+                        <video muted playsinline preload="auto" aria-label="Left camera of the air-fryer session"></video>
+                        <span class="pl-tag"></span>
+                        <div class="pl-progress"><span></span></div>
+                        <button type="button" class="pl-btn" aria-label="Pause"><svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
                     </div>
-                </div>
-                <div class="how-right">
-                    <div class="how-cap" aria-live="polite">
-                        <div class="k"></div>
-                        <h3></h3>
-                        <p></p>
-                        <div class="how-speed" hidden>
-                            <div class="race-line"><span class="who">Agent</span><div class="race-bar"><span style="--c:var(--base-ink);width:100%"></span></div><span class="t">72 min</span></div>
-                            <div class="race-line"><span class="who">Program</span><div class="race-bar"><span style="--c:var(--rax);width:0.5%"></span></div><span class="t">18 s</span></div>
+                    <div class="cc-side">
+                        <div class="pl-now" aria-live="polite">
+                            <div class="k how-k"></div>
+                            <h3 class="how-h"></h3>
+                            <p class="how-p"></p>
+                            <p class="how-stat"></p>
                         </div>
                     </div>
-                    <div class="how-codebox">
-                        <div class="how-code-head"></div>
-                        <pre class="how-code"></pre>
+                    <div class="cc-code">
+                        <div class="cc-code-head"></div>
+                        <pre class="cc-pre"></pre>
+                        <div class="cc-feed" hidden></div>
                     </div>
                 </div>
             </div>
@@ -291,6 +288,7 @@
     <script src="assets/js/content.js"></script>
     <script src="assets/js/sessions.js"></script>
     <script src="assets/js/code.js"></script>
+    <script src="assets/js/activity.js"></script>
     <script src="assets/js/site.js"></script>
     <script src="assets/js/how.js"></script>
     <script type="module" src="assets/js/fryer3d.js"></script>

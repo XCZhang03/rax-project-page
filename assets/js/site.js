@@ -185,7 +185,8 @@
       });
       row.appendChild(d); nav.appendChild(row);
     });
-    var codeBody = null, codeHead = null, codeLines = [];
+    var codeBody = null, codeHead = null, codeLines = [], feedBody = null, feedLines = [], mode = 'program', shown = -1, hl = [], ptr = -1;
+    var KIND = { call: 'robot', run: 'shell', edit: 'edit', say: 'agent', operator: 'operator', log: 'output' };
     if (code) {
       var cb = el('div', { class: 'cc-code' });
       codeHead = el('div', { class: 'cc-code-head' });
@@ -196,13 +197,33 @@
         return '<span class="ln">' + (h || ' ') + '</span>';
       }).join('');
       codeLines = Array.prototype.slice.call(codeBody.children);
-      cb.appendChild(codeHead); cb.appendChild(codeBody);
+      feedBody = el('div', { class: 'cc-feed', hidden: '' });
+      cb.appendChild(codeHead); cb.appendChild(codeBody); cb.appendChild(feedBody);
       box.appendChild(cb);
+    }
+    // the activity feed reveals its lines as the clip plays; in a program step a pointer walks its lines
+    function codeProgress(k) {
+      if (!codeBody) return;
+      if (mode === 'feed') {
+        var n = feedLines.length, want = Math.min(n - 1, Math.floor(k * n * 1.05));
+        if (want < 0) want = 0;
+        if (want === shown) return;
+        feedLines.forEach(function (l, j) { l.classList.toggle('shown', j <= want); l.classList.toggle('new', j === want); });
+        shown = want;
+        var last = feedLines[want];
+        feedBody.scrollTop = Math.max(0, last.offsetTop - feedBody.offsetTop - feedBody.clientHeight + last.offsetHeight + 12);
+      } else if (hl.length) {
+        var q = Math.min(hl.length - 1, Math.floor(k * hl.length));
+        if (q === ptr) return;
+        if (ptr >= 0) codeLines[hl[ptr]].classList.remove('cur');
+        codeLines[hl[q]].classList.add('cur');
+        ptr = q;
+      }
     }
     host.appendChild(box);
     var cur = 0, playing = !reduced, visible = false, timer = null, t0 = 0, raf = null;
     function stop() { clearTimeout(timer); cancelAnimationFrame(raf); }
-    function fill(k) { bar.style.width = (k * 100) + '%'; }
+    function fill(k) { bar.style.width = (k * 100) + '%'; codeProgress(k); }
     function tickStill(t) { var k = Math.min(1, (t - t0) / STILL_MS); fill(k); if (k < 1) raf = requestAnimationFrame(tickStill); }
     function render() {
       var it = items[cur], g = groups[it.g];
@@ -229,14 +250,29 @@
         else still.appendChild(el('img', { src: IMGP + it.img, alt: it.title }));
       }
       if (codeBody) {
-        var hl = it.code || [];
-        codeHead.textContent = (it.code ? 'Running: ' : 'The program it wrote: ') + code.file;
-        codeBody.classList.toggle('focus', hl.length > 0);
-        codeLines.forEach(function (ln, j) { ln.classList.toggle('on', hl.indexOf(j) >= 0); });
-        if (hl.length) {
-          var first = codeLines[hl[0]];
-          codeBody.scrollTo({ top: Math.max(0, first.offsetTop - codeBody.offsetTop - 30), behavior: reduced ? 'auto' : 'smooth' });
+        mode = it.feed ? 'feed' : 'program';
+        codeBody.hidden = mode !== 'program'; feedBody.hidden = mode !== 'feed';
+        if (mode === 'feed') {
+          codeHead.textContent = 'What the agent was doing, ' + it.feed.span;
+          feedBody.innerHTML = it.feed.lines.map(function (l) {
+            var kd = l.kind || 'call';
+            var txt = esc(l.text);
+            if (kd === 'edit' && /^[+-] /.test(l.text)) txt = '<span class="' + (l.text[0] === '+' ? 'add' : 'del') + '">' + txt + '</span>';
+            return '<span class="fl k-' + kd + '"><span class="tm">' + esc(l.time || '') + '</span><span class="kd">' + KIND[kd] + '</span><span class="tx">' + txt + '</span></span>';
+          }).join('');
+          feedLines = Array.prototype.slice.call(feedBody.children);
+          shown = -1;
+        } else {
+          hl = it.code || []; ptr = -1;
+          codeHead.textContent = 'Running: ' + code.file;
+          codeBody.classList.toggle('focus', hl.length > 0);
+          codeLines.forEach(function (ln, j) { ln.classList.toggle('on', hl.indexOf(j) >= 0); ln.classList.remove('cur'); });
+          if (hl.length) {
+            var first = codeLines[hl[0]];
+            codeBody.scrollTo({ top: Math.max(0, first.offsetTop - codeBody.offsetTop - 30), behavior: reduced ? 'auto' : 'smooth' });
+          }
         }
+        codeProgress(0);
       }
       var nx = items[(cur + 1) % items.length];
       if (nx.vid && !nx.warm) { nx.warm = true; var l = document.createElement('link'); l.rel = 'prefetch'; l.href = ASSET + nx.vid; document.head.appendChild(l); }
@@ -279,10 +315,11 @@
     function chapters(id) {
       var S = (D.sessions || {})[id];
       if (!S) return [];
-      return S.chapters.map(function (c) {
+      var feeds = ((D.activity || {})[id] || {}).chapters || [];
+      return S.chapters.map(function (c, ci) {
         var st = STATUS[c.status] || STATUS.explore;
         return { vid: c.vid.replace(/^assets\//, ''), poster: c.poster.replace(/^assets\//, ''), title: c.title, text: c.text, quote: c.quote,
-                 color: 'var(' + st[1] + ')', kicker: st[0] + (c.when ? ', ' + c.when : '') };
+                 color: 'var(' + st[1] + ')', kicker: st[0] + (c.when ? ', ' + c.when : ''), feed: feeds[ci] && feeds[ci].lines.length ? feeds[ci] : null };
       });
     }
     function linesFor(code, step) {

@@ -438,3 +438,51 @@ footer { text-align: center; padding: 48px 0 40px; font-size: 0.85rem; color: va
 .cc-pre.focus .ln.on { opacity: 1; background: var(--rax-soft); border-left-color: var(--rax); }
 @media (max-width: 860px) { .cc { grid-template-columns: 1fr; } .cc-pre { height: 220px; } }
 .cc-pre .call { font-weight: 700; }
+/* activity feed during session chapters; execution pointer during program steps */
+.cc-feed { font-family: var(--mono); font-size: 0.74rem; line-height: 1.55; padding: 8px 0; height: 250px; overflow: auto; }
+.cc-feed .fl { display: grid; grid-template-columns: 9.5ch 8ch 1fr; gap: 10px; padding: 2px 16px; opacity: 0; transform: translateY(4px); transition: opacity .3s, transform .3s, background .6s; border-left: 3px solid transparent; }
+.cc-feed .fl.shown { opacity: 1; transform: none; }
+.cc-feed .fl.new { background: var(--rax-soft); border-left-color: var(--rax); }
+.cc-feed .tm { color: var(--muted); }
+.cc-feed .kd { font-family: var(--sans); font-size: 0.7rem; font-weight: 800; text-transform: none; color: var(--muted); }
+.cc-feed .tx { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.cc-feed .k-call .kd { color: var(--rax); }
+.cc-feed .k-run .kd { color: var(--amber); }
+.cc-feed .k-edit .kd { color: var(--code); }
+.cc-feed .k-say .kd { color: var(--ink-2); }
+.cc-feed .k-say .tx { font-family: var(--sans); font-style: italic; color: var(--ink-2); }
+.cc-feed .k-operator .kd { color: var(--new); }
+.cc-feed .k-operator .tx { font-family: var(--sans); color: var(--ink-2); }
+.cc-feed .add { color: var(--new); }
+.cc-feed .del { color: var(--warn); }
+.cc-pre .ln.cur { background: color-mix(in srgb, var(--rax) 28%, transparent) !important; }
+.cc-pre .ln.cur::before { content: '\25B6'; position: absolute; margin-left: -13px; font-size: 0.6rem; color: var(--rax); }
+.cc-pre .ln { position: relative; }
+@media (max-width: 860px) { .cc-feed { height: 220px; } .cc-feed .fl, .how-side .cc-feed .fl { grid-template-columns: 9ch 1fr; } .cc-feed .kd { display: none; } }
+
+/* ---------- how it works: four acts ---------- */
+.how2 { overflow: hidden; }
+.how2 .cc { border: none; border-radius: 0; }
+.acts { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
+.acts li + li { border-left: 1px solid var(--line); }
+.acts button { position: relative; width: 100%; display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: center; text-align: left; border: none; background: none; cursor: pointer; padding: 12px 14px 14px; color: var(--ink-2); }
+.acts button b { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; border: 2px solid var(--line); color: var(--muted); }
+.acts button strong { display: block; font-size: 0.9rem; color: var(--ink-2); line-height: 1.2; }
+.acts button em { display: block; font-style: normal; font-size: 0.76rem; color: var(--muted); }
+.acts button i { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--rax); }
+.acts button[aria-current="step"] { background: var(--rax-soft); }
+.acts button[aria-current="step"] b { background: var(--rax); border-color: var(--rax); color: #fff; }
+.acts button[aria-current="step"] strong { color: var(--ink); }
+.acts button.done b { border-color: var(--rax); color: var(--rax); }
+.how-stat { margin-top: 10px; font-size: 0.84rem; font-weight: 700; color: var(--ink); border-left: 3px solid var(--rax); padding-left: 10px; }
+.cc-pre.typing .ln { visibility: hidden; }
+.cc-pre.typing .ln.shown { visibility: visible; }
+.cc-pre:not(.typing).focus .ln.on { opacity: 1; background: none; border-left-color: transparent; }
+.cc-pre.focus .ln.cur { opacity: 1; }
+.cc-feed .k-error .kd, .cc-feed .k-error .tx { color: var(--warn); }
+.cc-feed .k-ok .kd, .cc-feed .k-ok .tx { color: var(--new); font-weight: 700; }
+.cc-feed .k-log .kd { color: var(--muted); }
+.cc-feed .k-log .tx { color: var(--ink-2); }
+@media (max-width: 860px) { .acts { grid-template-columns: 1fr 1fr; } .acts li:nth-child(3) { border-left: none; } .acts li:nth-child(n+3) { border-top: 1px solid var(--line); } }
+/* how: a shorter code strip under the video */
+.how2 .cc-pre, .how2 .cc-feed { height: 150px; }
