@@ -208,6 +208,9 @@
         /* ---------------- method ---------------- */
         .figure { background: #fff; border: 1px solid var(--faint); border-radius: 8px; padding: 24px; }
         .figure img { display: block; width: 100%; }
+        .case { display: block; cursor: zoom-in; }
+        .case img { aspect-ratio: auto; }
+        .tab .fig-n { opacity: 0.55; margin-right: 7px; font-variant-numeric: tabular-nums; }
 
         /* ---------------- abstract / bibtex ---------------- */
         /* Abstract and BibTeX: heading on the left, text filling the rest of the width. */
@@ -266,6 +269,7 @@
             <a href="#tasks">Real robots</a>
             <a href="#code">Programs</a>
             <a href="#method">Method</a>
+            <a href="#cases">Case studies</a>
             <a href="#abstract">Abstract</a>
             <a href="#bibtex">BibTeX</a>
         </div>
@@ -553,9 +557,50 @@
         <h2>How it works</h2>
         <p class="lede">A frozen LLM coding agent drives the robot through its perception and control interfaces. What it learns lives in its workspace: notes, programs and verified skills.</p>
         <div class="figure">
-            <img src="figures/architecture.webp" alt="RAX architecture: a frozen-LLM coding agent reads and writes memory, perceives through RGB-D, acts through the robot control SDK, and writes robot programs." loading="lazy">
+            <img src="figures/paper/fig02_architecture.svg" alt="RAX architecture: a frozen-LLM coding agent reads and writes memory, perceives through RGB-D, acts through the robot control SDK, and writes robot programs." loading="lazy">
         </div>
     </section>
+
+    <section id="cases">
+        <h2>Case studies</h2>
+        <div class="tabs" id="caseTabs"></div>
+        <a class="figure case" id="caseLink" href="#" target="_blank" rel="noopener">
+            <img id="caseImg" alt="">
+        </a>
+    </section>
+    <script>
+    (function() {
+        /* Figures from the paper, converted from their source PDFs to vector SVG. */
+        var FIGS = [
+            {n: 4, file: 'fig04_rby1', name: 'Long-horizon RB-Y1', alt: 'A long-horizon task on the real RB-Y1'},
+            {n: 5, file: 'fig05_boxing', name: 'BEHAVIOR-1K boxing', alt: 'The program RAX writes for boxing books on BEHAVIOR-1K'},
+            {n: 24, file: 'fig24_airfry_program', name: 'Air-fryer program', alt: 'The air-fryer program'},
+            {n: 31, file: 'fig31_peg_program', name: 'Peg insertion', alt: 'The peg-insertion procedure'}
+        ];
+        var tabs = document.getElementById('caseTabs');
+        var img = document.getElementById('caseImg');
+        var link = document.getElementById('caseLink');
+        function show(i) {
+            var f = FIGS[i], src = 'figures/paper/' + f.file + '.svg';
+            img.src = src;
+            img.alt = 'Figure ' + f.n + ': ' + f.alt;
+            link.href = src;
+            Array.prototype.forEach.call(tabs.children, function(b, j) { b.classList.toggle('on', j === i); });
+        }
+        FIGS.forEach(function(f, i) {
+            var b = document.createElement('button');
+            b.className = 'tab';
+            var n = document.createElement('span');
+            n.className = 'fig-n';
+            n.textContent = 'Fig. ' + f.n;
+            b.appendChild(n);
+            b.appendChild(document.createTextNode(f.name));
+            b.addEventListener('click', function() { show(i); });
+            tabs.appendChild(b);
+        });
+        show(0);
+    })();
+    </script>
 
     <section id="abstract" class="side">
         <h2>Abstract</h2>
