@@ -92,7 +92,7 @@
         </header>
 
         <div class="video-wrapper">
-            <video id="mainVideo" controls preload="metadata" playsinline>
+            <video id="mainVideo" controls autoplay muted loop playsinline preload="auto">
                 <source src="https://assets.robot-agent-exploration.com/static/rax_overview_light_v2.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
@@ -115,7 +115,7 @@
     </div>
 
     <section class="block" id="abstract">
-        <div class="wrap">
+        <div class="wrap abstract-wrap">
             <h2>Abstract</h2>
             <p class="abstract">
                 Robot learning has made substantial progress by scaling demonstration data and model capacity,
@@ -149,70 +149,32 @@
     <section class="block" id="how">
         <div class="wrap">
             <h2>How RAX works</h2>
-            <p class="lead">A coding agent on a frozen language model programs the robot directly. It keeps what it learns as notes and verified skills, and compiles what works into robot programs. A program runs on its own, and when it is not sure it raises <code>Unsure()</code> and hands control back to the agent.</p>
-            <div class="arch">
-                <div class="arch-loop">
-                    <div class="card mem">
-                        <h3>Memory</h3>
-                        <div class="mem-cols">
-                            <div>
-                                <h4>Working memory</h4>
-                                <div class="l">&rarr; observe("head")</div>
-                                <div class="l">&larr; rgb, depth, pose</div>
-                                <div class="l">&rarr; move_pose(left, ...)</div>
-                                <div class="l">&hellip; compressed when full</div>
-                            </div>
-                            <div>
-                                <h4>Notes</h4>
-                                <div class="l"><b>PROGRESS.md</b> next step</div>
-                                <div class="l"><b>TIPS.md</b></div>
-                                <div class="l">chair &nbsp;grasp 4 cm deeper</div>
-                                <div class="l">bucket stand up at once</div>
-                            </div>
-                            <div>
-                                <h4>Skill repository</h4>
-                                <div class="l">office-chair-tuck &nbsp;v5</div>
-                                <div class="l hl">stack-cups &nbsp;v4</div>
-                                <div class="l">bimanual-bucket-rim-pnp v4</div>
-                                <div class="l">oc-hand-reach &nbsp;v2</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mid">
-                        <div class="card mod" id="modPerception">
-                            <h4>Perception</h4>
-                            <dl><dt>Input</dt><dd>RGB-D, images</dd><dt>Builds</dt><dd>3D points, models</dd><dt>Checks</dt><dd>re-measures</dd></dl>
-                        </div>
-                        <div class="agentbox" id="modAgent">
-                            <strong>Coding agent</strong>
-                            <span>frozen LLM</span>
-                            <em>reflects on outcomes</em>
-                            <em>writes the code</em>
-                        </div>
-                        <div class="card mod" id="modControl">
-                            <h4>Control</h4>
-                            <dl><dt>Acts</dt><dd>robot control SDK</dd><dt>Plans</dt><dd>IK, URDF models</dd><dt>Senses</dt><dd>joint torque, force</dd></dl>
-                        </div>
-                    </div>
-                    <div class="boundary">isolation boundary</div>
-                    <div class="robots">
-                        <figure><img src="assets/img/arch/airfry.jpg" alt="Franka opening an air fryer" loading="lazy"><figcaption>Franka, opening an air fryer</figcaption></figure>
-                        <figure><img src="assets/img/arch/peg.jpg" alt="Franka inserting a peg" loading="lazy"><figcaption>Franka, peg insertion, 0.1 mm clearance</figcaption></figure>
-                        <figure><img src="assets/img/arch/rby1.jpg" alt="RB-Y1 wheeled humanoid" loading="lazy"><figcaption>RB-Y1, whole body, long horizon</figcaption></figure>
+            <p class="lead">One real session on the Franka, played step by step: the agent explores the air fryer through tool calls, compiles what worked into a program, and the program then runs on its own, handing control back to the agent when a check fails.</p>
+            <div class="card how" id="howRoot">
+                <div class="how-left">
+                    <svg class="how-svg" role="img" aria-label="Diagram of the coding agent, its memory, the robot program and the robot, with the active connections of the current step"></svg>
+                    <div class="how-bar">
+                        <button type="button" class="how-play" aria-label="Pause">
+                            <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                            <svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
+                        <div class="how-dots" role="group" aria-label="Steps"></div>
                     </div>
                 </div>
-                <div class="card program">
-                    <div class="program-head">
-                        <strong>A robot program it wrote</strong>
-                        <div class="keys" role="group" aria-label="Highlight lines">
-                            <button type="button" class="k-perceive" data-k="perceive" aria-pressed="false">perceive</button>
-                            <button type="button" class="k-plan" data-k="plan" aria-pressed="false">plan</button>
-                            <button type="button" class="k-act" data-k="act" aria-pressed="false">act</button>
-                            <button type="button" class="k-unsure" data-k="unsure" aria-pressed="false">Unsure()</button>
+                <div class="how-right">
+                    <div class="how-cap" aria-live="polite">
+                        <div class="k"></div>
+                        <h3></h3>
+                        <p></p>
+                        <div class="how-speed" hidden>
+                            <div class="race-line"><span class="who">Agent</span><div class="race-bar"><span style="--c:var(--base-ink);width:100%"></span></div><span class="t">72 min</span></div>
+                            <div class="race-line"><span class="who">Program</span><div class="race-bar"><span style="--c:var(--rax);width:0.5%"></span></div><span class="t">18 s</span></div>
                         </div>
                     </div>
-                    <pre class="code" id="archCode"></pre>
-                    <div class="program-foot">Air fryer on the Franka, condensed from the agent&rsquo;s code. Hover a module or pick a key to see its lines.</div>
+                    <div class="how-codebox">
+                        <div class="how-code-head"></div>
+                        <pre class="how-code"></pre>
+                    </div>
                 </div>
             </div>
         </div>
@@ -282,7 +244,7 @@
     <section class="block" id="programs">
         <div class="wrap">
             <h2>Inside the programs it writes</h2>
-            <p class="lead">Each Franka session ends with the agent&rsquo;s own program for the task: its perception, its plan, and the checks that decide when to try again or stop. Step through one with the arrows or the numbered steps.</p>
+            <p class="lead">Each Franka session ends with the agent&rsquo;s own program for the task: its perception, its plan, and the checks that decide when to try again or stop. They play step by step; pick a task or a step to jump.</p>
             <div class="seg" id="progTabs"></div>
             <div class="card prog" id="progRoot" tabindex="-1">
                 <div class="prog-stage"></div>
@@ -325,11 +287,11 @@
     <section class="block" id="horizon">
         <div class="wrap">
             <h2>Six chained tasks from skills it taught itself</h2>
-            <p class="lead">One instruction on the RB-Y1: park a chair, stack two cups, put the cups and a banana in a bucket, set the bucket on a cabinet, tuck the chair back, and put a box on the cabinet. Each stage calls skills the agent learned in earlier sessions. The final run took 98 minutes. Pick a skill or a stage.</p>
+            <p class="lead">One instruction on the RB-Y1, six stages across the room. The agent solves them with four skills it learned in earlier practice sessions, two of them used twice, and writes the glue between them on the spot. The final run took 98 minutes.</p>
             <div id="rby1Root" tabindex="-1">
-                <div class="skills"></div>
+                <p class="skill-note"></p>
+                <div class="film" role="group" aria-label="The six stages"></div>
                 <div class="card tl">
-                    <div class="tl-track"></div>
                     <div class="tl-body"></div>
                 </div>
             </div>
@@ -460,6 +422,7 @@
     <script src="assets/js/data.js"></script>
     <script src="assets/js/content.js"></script>
     <script src="assets/js/site.js"></script>
+    <script src="assets/js/how.js"></script>
     <script type="module" src="assets/js/fryer3d.js"></script>
 </body>
 </html>
