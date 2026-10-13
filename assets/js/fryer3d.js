@@ -105,7 +105,7 @@ async function init() {
   loading.remove();
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   view.prepend(renderer.domElement);
   const scene = new THREE.Scene();
   const M = data.model;
@@ -125,7 +125,7 @@ async function init() {
   controls.addEventListener('start', () => { controls.autoRotate = false; });
 
   // point clouds
-  const pmat = new THREE.PointsMaterial({ size: 0.003, vertexColors: true, sizeAttenuation: true });
+  const pmat = new THREE.PointsMaterial({ size: 0.0034, vertexColors: true, sizeAttenuation: true });
   const cloudClosed = new THREE.Points(decode(data.closed), pmat);
   const cloudOpen = new THREE.Points(decode(data.open), pmat);
   scene.add(cloudClosed, cloudOpen);
@@ -226,11 +226,15 @@ async function init() {
   resize();
 
   const tmp = new THREE.Vector3();
-  let visible = true;
-  new IntersectionObserver((es) => { visible = es[0].isIntersecting; }).observe(view);
+  // Render only while on screen, and only when something moves.
+  let visible = true, running = false, dirty = true;
+  controls.addEventListener('change', () => { dirty = true; });
+  const wake = () => { dirty = true; if (!running && visible) { running = true; requestAnimationFrame(loop); } };
+  new IntersectionObserver((es) => { visible = es[0].isIntersecting; if (visible) wake(); }).observe(view);
+  root.addEventListener('input', wake); root.addEventListener('change', wake); view.addEventListener('pointerdown', wake); view.addEventListener('wheel', wake, { passive: true });
   function loop(now) {
+    if (!visible || document.hidden) { running = false; return; }
     requestAnimationFrame(loop);
-    if (!visible) return;
     if (animOpen && now > t0) {
       const k = Math.min(1, (now - t0) / 2200);
       const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
@@ -239,7 +243,9 @@ async function init() {
       update();
       if (k >= 1) animOpen = false;
     }
-    controls.update();
+    const moved = controls.update();
+    if (!moved && !dirty && !animOpen && !controls.autoRotate) return;
+    dirty = false;
     renderer.render(scene, camera);
     const w = view.clientWidth, h = view.clientHeight;
     pins.forEach((p) => {
@@ -252,7 +258,7 @@ async function init() {
     });
   }
   slider.addEventListener('pointerdown', () => { animOpen = false; });
-  requestAnimationFrame(loop);
+  wake();
 }
 
 // Load three.js and the clouds only when the viewer comes near the screen.

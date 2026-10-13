@@ -25,13 +25,9 @@
             <a class="brand" href="#top">RAX</a>
             <nav aria-label="Sections">
                 <a href="#how">How it works</a>
-                <a href="#tasks">Sessions</a>
-                <a href="#programs">Programs</a>
+                <a href="#tasks">Real-robot sessions</a>
                 <a href="#model">3D model</a>
-                <a href="#horizon">Long horizon</a>
                 <a href="#results">Results</a>
-                <a href="#code">Agent to code</a>
-                <a href="#behaviors">Behaviors</a>
                 <a href="#bibtex">BibTeX</a>
             </nav>
             <button class="theme-btn" type="button" aria-label="Switch light or dark theme">
@@ -44,24 +40,24 @@
         <header class="hero">
             <h1><span>RAX</span>: Scaling Online Exploration for Robot Agents</h1>
             <div class="authors">
-                Runhan Huang<sup>1,*</sup>,
-                Xiangcheng Zhang<sup>1,*,&dagger;</sup>,
-                Haoyu Chen<sup>1,&Dagger;</sup>,
+                <a href="https://hrh6666.github.io/" target="_blank" rel="noopener">Runhan Huang</a><sup>1,*</sup>,
+                <a href="https://scholar.google.com/citations?user=pBnAahcAAAAJ" target="_blank" rel="noopener">Xiangcheng Zhang</a><sup>1,*,&dagger;</sup>,
+                <a href="https://tonychy.com/" target="_blank" rel="noopener">Haoyu Chen</a><sup>1,&Dagger;</sup>,
                 Yitong Li<sup>2,&Dagger;</sup>,
-                Yen-Jen Wang<sup>3,&Dagger;</sup>,
-                Bohan Lyu<sup>3,&Dagger;</sup>,
-                Haoyu Xiong<sup>4</sup>,
-                Yangzhen Wu<sup>3</sup>,
-                Chuye Hong<sup>3</sup>,
-                Haotian Ye<sup>5</sup>,
-                Yixuan Wang<sup>2</sup>,
-                Travis Manderson<sup>4</sup>,
-                Stefano Ermon<sup>5</sup>,
-                Dawn Song<sup>3</sup>,
-                Qianqian Wang<sup>1</sup>,
-                Antonio Torralba<sup>4</sup>,
-                Weirui Ye<sup>4</sup>,
-                Yilun Du<sup>1</sup>
+                <a href="https://yenjen.me/" target="_blank" rel="noopener">Yen-Jen Wang</a><sup>3,&Dagger;</sup>,
+                <a href="https://bohanlyu.com" target="_blank" rel="noopener">Bohan Lyu</a><sup>3,&Dagger;</sup>,
+                <a href="https://haoyu-x.github.io/" target="_blank" rel="noopener">Haoyu Xiong</a><sup>4</sup>,
+                <a href="https://scholar.google.com/citations?user=uSaJ424AAAAJ" target="_blank" rel="noopener">Yangzhen Wu</a><sup>3</sup>,
+                <a href="https://chuye03.github.io/" target="_blank" rel="noopener">Chuye Hong</a><sup>3</sup>,
+                <a href="https://haotianye.com/" target="_blank" rel="noopener">Haotian Ye</a><sup>5</sup>,
+                <a href="https://www.yixuanwang.me/" target="_blank" rel="noopener">Yixuan Wang</a><sup>2</sup>,
+                <a href="https://people.csail.mit.edu/travis/" target="_blank" rel="noopener">Travis Manderson</a><sup>4</sup>,
+                <a href="https://cs.stanford.edu/~ermon/" target="_blank" rel="noopener">Stefano Ermon</a><sup>5</sup>,
+                <a href="https://dawnsong.io/" target="_blank" rel="noopener">Dawn Song</a><sup>3</sup>,
+                <a href="https://qianqianwang68.github.io/" target="_blank" rel="noopener">Qianqian Wang</a><sup>1</sup>,
+                <a href="https://groups.csail.mit.edu/vision/torralbalab/" target="_blank" rel="noopener">Antonio Torralba</a><sup>4</sup>,
+                <a href="https://yewr.github.io/" target="_blank" rel="noopener">Weirui Ye</a><sup>4</sup>,
+                <a href="https://yilundu.github.io/" target="_blank" rel="noopener">Yilun Du</a><sup>1</sup>
             </div>
             <div class="affiliations">
                 <sup>1</sup>Harvard University &nbsp;&middot;&nbsp;
@@ -69,6 +65,13 @@
                 <sup>3</sup>UC Berkeley &nbsp;&middot;&nbsp;
                 <sup>4</sup>MIT &nbsp;&middot;&nbsp;
                 <sup>5</sup>Stanford University
+            </div>
+            <div class="logos">
+                <img src="assets/img/logos/harvard.svg" alt="Harvard University" class="logo-harvard">
+                <img src="assets/img/logos/nvidia.svg" alt="NVIDIA" class="logo-nvidia">
+                <img src="assets/img/logos/berkeley.png" alt="UC Berkeley" class="logo-berkeley">
+                <img src="assets/img/logos/mit.svg" alt="MIT" class="logo-mit">
+                <img src="assets/img/logos/stanford.svg" alt="Stanford University" class="logo-stanford">
             </div>
             <div class="notes">
                 <sup>*</sup>Equal contribution &nbsp;&nbsp;
@@ -100,6 +103,9 @@
         <script>
         (function() {
             var main = document.getElementById('mainVideo');
+            // fetch the high-quality cut only once the light one is playing, so the rest of the page loads first
+            main.addEventListener('playing', function() { setTimeout(upgrade, 3000); }, {once: true});
+            function upgrade() {
             var hq = document.createElement('video');
             hq.preload = 'auto';
             hq.src = 'https://assets.robot-agent-exploration.com/static/rax_overview_v2.mp4';
@@ -110,6 +116,7 @@
                 main.currentTime = currentTime;
                 if (wasPlaying) main.play();
             }, {once: true});
+            }
         })();
         </script>
     </div>
@@ -152,7 +159,7 @@
             <p class="lead">One real session on the Franka, played step by step: the agent explores the air fryer through tool calls, compiles what worked into a program, and the program then runs on its own, handing control back to the agent when a check fails.</p>
             <div class="card how" id="howRoot">
                 <div class="how-left">
-                    <svg class="how-svg" role="img" aria-label="Diagram of the coding agent, its memory, the robot program and the robot, with the active connections of the current step"></svg>
+                    <div class="how-figure"><svg class="how-svg" role="img" aria-label="Diagram of the coding agent, its memory, the robot program and the robot, with the active connections of the current step"></svg></div>
                     <div class="how-bar">
                         <button type="button" class="how-play" aria-label="Pause">
                             <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
@@ -184,71 +191,13 @@
         <div class="wrap">
             <h2>Real-robot sessions</h2>
             <p class="lead">
-                Each video is a full session: the agent explores the task on the real robot, makes mistakes,
+                Each session starts from the task text alone: the agent explores the task on the real robot, makes mistakes,
                 fixes them, and turns what works into its own programs. No demonstrations, no teleoperation,
-                no policy training. Select a task to watch its session.
+                no policy training. Pick a task; the session and the program play chapter by chapter.
             </p>
-            <div class="seg" id="taskTabs"></div>
-            <div class="video-wrapper">
-                <video id="taskVideo" controls preload="none" playsinline></video>
-            </div>
-            <div class="task-info">
-                <h3 id="taskTitle"></h3>
-                <div class="task-meta" id="taskMeta"></div>
-                <p class="task-desc" id="taskDesc"></p>
-            </div>
-        </div>
-    </section>
-    <script>
-    (function() {
-        var BASE = 'https://assets.robot-agent-exploration.com/static/tasks/';
-        var VER = '?v=1';
-        var TASKS = [
-            {id: 'find_the_cube', name: 'Find the Cube', meta: 'Franka · memory · 2 h 35 min session',
-             desc: 'The operator hides a cube under one of four cups, at one point dropping it into a cup, and shuffles them. The agent learns to watch the shuffle from above, to follow the cube by its shape and height in depth rather than by its appearance, and to lift the right cup and pick up the cube.'},
-            {id: 'air_fry_pan', name: 'Air Fryer', meta: 'Franka · articulated object · 2 h 46 min session',
-             desc: 'Open a heavy air-fryer drawer, put a banana (and later a ball) inside, and close it. The agent searches for a collision-free grasp on the handle, works out how far to pull and how to drop the banana, and turns the routine into a program that runs unattended.'},
-            {id: 'swipe_table', name: 'Wipe the Table', meta: 'Franka · deformable object · 3 h 25 min session',
-             desc: 'Wipe a soy-sauce stain with a wet towel, on an arm without a force sensor. The agent learns to grab a thick wad of cloth, to infer contact from where the cloth stalls the arm, and to check with its cameras that the table is really clean.'},
-            {id: 'peg_insertion', name: 'Peg-in-Hole', meta: 'Franka · precision · ManipulationNet board · 4 h 39 min session',
-             desc: 'The ManipulationNet peg-in-hole board, with rows of 3 mm, 1 mm and 0.1 mm clearance. The agent registers the board to its CAD model, finds holes by touch, and develops a wiggle-push that seats all three pegs in the 0.1 mm-clearance row.'},
-            {id: 'bandu', name: 'Bandu Tower', meta: 'Franka · precision stacking · 6 h 6 min session',
-             desc: 'Rebuild a tower of seven irregular wooden blocks, with the finished tower as the only demonstration. The agent measures each piece by touch while taking the tower apart, then writes a program that takes the tower apart and rebuilds it on its own.'},
-            {id: 'rby1', name: 'RB-Y1: Six Chained Tasks', meta: 'Rainbow RB-Y1 · long-horizon, whole body · three runs',
-             desc: 'One instruction, six steps across a room: park a chair, stack two cups, put the cups and a banana in a bucket, set the bucket on a cabinet, tuck the chair back, and place a box. The agent reuses skills it taught itself in earlier sessions and refines them after every run: 120, 117 and 98 minutes over three runs.'}
-        ];
-        var tabs = document.getElementById('taskTabs');
-        var video = document.getElementById('taskVideo');
-        tabs.setAttribute('role', 'tablist');
-        function show(i) {
-            var t = TASKS[i];
-            video.poster = BASE + t.id + '_poster.jpg' + VER;
-            video.src = BASE + t.id + '.mp4' + VER;
-            document.getElementById('taskTitle').textContent = t.name;
-            document.getElementById('taskMeta').textContent = t.meta;
-            document.getElementById('taskDesc').textContent = t.desc;
-            Array.prototype.forEach.call(tabs.children, function(b, j) { b.setAttribute('aria-selected', j === i ? 'true' : 'false'); });
-        }
-        TASKS.forEach(function(t, i) {
-            var b = document.createElement('button');
-            b.type = 'button';
-            b.setAttribute('role', 'tab');
-            b.textContent = t.name;
-            b.addEventListener('click', function() { show(i); video.play(); });
-            tabs.appendChild(b);
-        });
-        show(0);
-    })();
-    </script>
-
-    <section class="block" id="programs">
-        <div class="wrap">
-            <h2>Inside the programs it writes</h2>
-            <p class="lead">Each Franka session ends with the agent&rsquo;s own program for the task: its perception, its plan, and the checks that decide when to try again or stop. They play step by step; pick a task or a step to jump.</p>
-            <div class="seg" id="progTabs"></div>
-            <div class="card prog" id="progRoot" tabindex="-1">
-                <div class="prog-stage"></div>
-                <div class="prog-side"></div>
+            <div id="sessRoot">
+                <div class="seg" id="sessTabs"></div>
+                <div class="sess-body"></div>
             </div>
         </div>
     </section>
@@ -279,20 +228,6 @@
                         <dt>sizes</dt><dd>Radii, heights and handle size, fixed from the agent&rsquo;s own measurements.</dd>
                         <dt>checks</dt><dd>Every planned motion is checked for clearance against the model at the current opening.</dd>
                     </dl>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="block" id="horizon">
-        <div class="wrap">
-            <h2>Six chained tasks from skills it taught itself</h2>
-            <p class="lead">One instruction on the RB-Y1, six stages across the room. The agent solves them with four skills it learned in earlier practice sessions, two of them used twice, and writes the glue between them on the spot. The final run took 98 minutes.</p>
-            <div id="rby1Root" tabindex="-1">
-                <p class="skill-note"></p>
-                <div class="film" role="group" aria-label="The six stages"></div>
-                <div class="card tl">
-                    <div class="tl-body"></div>
                 </div>
             </div>
         </div>
@@ -334,73 +269,6 @@
                         <p class="note" id="benchNote"></p>
                     </details>
                 </div>
-                <div class="card chart-card" id="benchCurveCard" style="margin-top:16px">
-                    <div class="chart-head">
-                        <h3>Each task against the exploration budget</h3>
-                        <div class="legend">
-                            <span><i class="line" style="--c:var(--rax)"></i>Average over tasks</span>
-                            <span><i class="line" style="--c:var(--base)"></i>One task; hover to name it</span>
-                        </div>
-                    </div>
-                    <svg class="chart" id="benchCurves" role="img" aria-label="Score of each task against exploration budget"></svg>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="block" id="code">
-        <div class="wrap">
-            <h2>From agent to code</h2>
-            <p class="lead">As the agent compiles its experience into a program, each action costs less of its own deliberation. On loading the car, the first success takes 123 minutes of inference and 254 thousand output tokens; by the last exploration episode, 4 minutes and 4 thousand.</p>
-            <div class="results-grid">
-                <div class="card chart-card">
-                    <div class="chart-head">
-                        <h3>Inference time of each successful episode</h3>
-                    </div>
-                    <div class="legend" style="margin-bottom:6px">
-                        <span><i class="line" style="--c:var(--rax)"></i>Loading the car, running median</span>
-                        <span><i class="dot" style="--c:var(--sk-bucket)"></i>Make toast random</span>
-                        <span><i class="ring" style="--c:var(--sk-bucket)"></i>Program alone</span>
-                    </div>
-                    <svg class="chart" id="timeChart" role="img" aria-label="Inference time per successful exploration episode on a log scale, falling as exploration goes on"></svg>
-                    <p class="note">Inference time: the time the robot waits for its next action, outside calls to the robot and simulator.</p>
-                </div>
-                <div class="card chart-card">
-                    <div class="chart-head">
-                        <h3>On the real Franka</h3>
-                    </div>
-                    <p class="small" style="margin-bottom:12px">Inference time of the first success with every action from the agent, against an unattended run of its program on the same task.</p>
-                    <div class="race" id="race">
-                        <div class="race-foot">
-                            <button type="button" id="raceBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>Replay</button>
-                            <span class="clock" id="raceClock"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="block" id="behaviors">
-        <div class="wrap">
-            <h2>Behaviors that emerge</h2>
-            <p class="lead">On real robots, mistakes have physical consequences. The agent turns each one into a rule its later programs follow, asks the operator when it needs help, and adapts a working program when the task changes.</p>
-
-            <h3 class="sub-h">Mistakes become rules</h3>
-            <div id="incRoot">
-                <div class="seg inc-tabs"></div>
-                <div class="inc-list"></div>
-            </div>
-
-            <h3 class="sub-h">It asks the operator</h3>
-            <p class="sub-lead">Requests the agent sent through its request tool, with the scene before and after. Drag the divider.</p>
-            <div class="chat" id="chatRoot"></div>
-
-            <h3 class="sub-h">It adapts a program when the task changes</h3>
-            <p class="sub-lead">The operator changes a task the program already solves. The agent keeps the parts that still hold and changes only the rest.</p>
-            <div id="adaptRoot">
-                <div class="seg adapt-tabs"></div>
-                <div class="adapt-holder"></div>
             </div>
         </div>
     </section>
@@ -421,6 +289,7 @@
 
     <script src="assets/js/data.js"></script>
     <script src="assets/js/content.js"></script>
+    <script src="assets/js/sessions.js"></script>
     <script src="assets/js/site.js"></script>
     <script src="assets/js/how.js"></script>
     <script type="module" src="assets/js/fryer3d.js"></script>
