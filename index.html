@@ -235,12 +235,27 @@
 
         <section class="video-section">
             <div class="video-wrapper">
-                <video controls preload="metadata" poster="">
-                    <source src="static/rax_overview.mp4" type="video/mp4">
+                <video id="mainVideo" controls preload="metadata">
+                    <source src="static/rax_overview_light.mp4" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
             </div>
         </section>
+        <script>
+        (function() {
+            var main = document.getElementById('mainVideo');
+            var hq = document.createElement('video');
+            hq.preload = 'auto';
+            hq.src = 'static/rax_overview.mp4';
+            hq.addEventListener('canplaythrough', function() {
+                var currentTime = main.currentTime;
+                var wasPlaying = !main.paused;
+                main.src = hq.src;
+                main.currentTime = currentTime;
+                if (wasPlaying) main.play();
+            }, {once: true});
+        })();
+        </script>
 
         <section>
             <h2>Abstract</h2>
