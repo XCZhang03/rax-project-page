@@ -4,246 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RAX: Scaling Online Exploration for Robot Agents</title>
+    <meta name="description" content="RAX: a coding agent programs robots directly, explores online, and turns what works into its own programs, without demonstrations or policy training.">
+    <script>
+        try { var t = localStorage.getItem('rax-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #ffffff;
-            --text: #1a1a1a;
-            --text-secondary: #555;
-            --accent: #2563eb;
-            --border: #e5e7eb;
-            --card-bg: #f9fafb;
-            --max-width: 900px;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #0f0f0f;
-                --text: #e5e5e5;
-                --text-secondary: #a0a0a0;
-                --accent: #60a5fa;
-                --border: #2a2a2a;
-                --card-bg: #1a1a1a;
-            }
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: var(--max-width);
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        header {
-            padding: 60px 0 20px;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: 2.2rem;
-            font-weight: 700;
-            line-height: 1.25;
-            margin-bottom: 24px;
-        }
-
-        h1 span {
-            color: var(--accent);
-        }
-
-        .authors {
-            font-size: 1.05rem;
-            color: var(--text-secondary);
-            line-height: 1.8;
-            margin-bottom: 8px;
-        }
-
-        .authors .equal {
-            font-size: 0.8rem;
-            vertical-align: super;
-        }
-
-        .affiliations {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-bottom: 28px;
-        }
-
-        .affiliations img {
-            height: 28px;
-            vertical-align: middle;
-            margin: 0 10px;
-            opacity: 0.8;
-        }
-
-        .buttons {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 48px;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            text-decoration: none;
-            color: var(--text);
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            transition: background 0.2s;
-        }
-
-        .btn:hover {
-            background: var(--border);
-        }
-
-        .btn svg {
-            width: 18px;
-            height: 18px;
-        }
-
-        .video-section {
-            margin-bottom: 48px;
-        }
-
-        .video-wrapper {
-            position: relative;
-            width: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #000;
-            border: 1px solid var(--border);
-        }
-
-        .video-wrapper video {
-            width: 100%;
-            display: block;
-        }
-
-        section {
-            margin-bottom: 48px;
-        }
-
-        section h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-        }
-
-        .abstract {
-            font-size: 1rem;
-            color: var(--text-secondary);
-            line-height: 1.75;
-            text-align: justify;
-        }
-
-        .bibtex-box {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-            overflow-x: auto;
-            white-space: pre;
-            line-height: 1.5;
-            color: var(--text-secondary);
-        }
-
-        .task-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 14px;
-        }
-        .task-tab {
-            padding: 6px 13px;
-            border-radius: 4px;
-            border: 1px solid var(--border);
-            background: var(--card-bg);
-            color: var(--text);
-            font: inherit;
-            font-size: 0.82rem;
-            cursor: pointer;
-            transition: background 0.15s, color 0.15s;
-        }
-        .task-tab:hover { background: var(--border); }
-        .task-tab.active { background: var(--text); color: var(--bg); border-color: var(--text); }
-        .task-info { margin-top: 14px; }
-        .task-info h3 {
-            font-size: 1.15rem;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-        .task-meta {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        .task-desc {
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            line-height: 1.7;
-        }
-        .section-note {
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            margin-bottom: 16px;
-        }
-
-        footer {
-            text-align: center;
-            padding: 40px 0;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            border-top: 1px solid var(--border);
-        }
-
-        @media (max-width: 600px) {
-            h1 { font-size: 1.5rem; }
-            header { padding: 40px 0 16px; }
-            .authors { font-size: 0.95rem; }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/site.css">
+    <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+    </script>
 </head>
 <body>
-    <div class="container">
-        <header>
+    <div class="topbar">
+        <div class="wrap">
+            <a class="brand" href="#top">RAX</a>
+            <nav aria-label="Sections">
+                <a href="#how">How it works</a>
+                <a href="#tasks">Real-robot sessions</a>
+                <a href="#model">3D model</a>
+                <a href="#results">Results</a>
+                <a href="#bibtex">BibTeX</a>
+            </nav>
+            <button class="theme-btn" type="button" aria-label="Switch light or dark theme">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="wrap" id="top">
+        <header class="hero">
             <h1><span>RAX</span>: Scaling Online Exploration for Robot Agents</h1>
             <div class="authors">
-                Runhan Huang<sup class="equal">1,*</sup>,
-                Xiangcheng Zhang<sup class="equal">1,*,&dagger;</sup>,
-                Haoyu Chen<sup class="equal">1,&Dagger;</sup>,
-                Yitong Li<sup class="equal">2,&Dagger;</sup>,
-                Yen-Jen Wang<sup class="equal">3,&Dagger;</sup>,
-                Bohan Lyu<sup class="equal">3,&Dagger;</sup>,
-                Haoyu Xiong<sup>4</sup>,
-                Yangzhen Wu<sup>3</sup>,
-                Chuye Hong<sup>3</sup>,
-                Haotian Ye<sup>5</sup>,
-                Yixuan Wang<sup>2</sup>,
-                Travis Manderson<sup>4</sup>,
-                Stefano Ermon<sup>5</sup>,
-                Dawn Song<sup>3</sup>,
-                Qianqian Wang<sup>1</sup>,
-                Antonio Torralba<sup>4</sup>,
-                Weirui Ye<sup>4</sup>,
-                Yilun Du<sup>1</sup>
+                <a href="https://hrh6666.github.io/" target="_blank" rel="noopener">Runhan Huang</a><sup>1,*</sup>,
+                <a href="https://scholar.google.com/citations?user=pBnAahcAAAAJ" target="_blank" rel="noopener">Xiangcheng Zhang</a><sup>1,*,&dagger;</sup>,
+                <a href="https://tonychy.com/" target="_blank" rel="noopener">Haoyu Chen</a><sup>1,&Dagger;</sup>,
+                Yitong Li<sup>2,&Dagger;</sup>,
+                <a href="https://yenjen.me/" target="_blank" rel="noopener">Yen-Jen Wang</a><sup>3,&Dagger;</sup>,
+                <a href="https://bohanlyu.com" target="_blank" rel="noopener">Bohan Lyu</a><sup>3,&Dagger;</sup>,
+                <a href="https://haoyu-x.github.io/" target="_blank" rel="noopener">Haoyu Xiong</a><sup>4</sup>,
+                <a href="https://scholar.google.com/citations?user=uSaJ424AAAAJ" target="_blank" rel="noopener">Yangzhen Wu</a><sup>3</sup>,
+                <a href="https://chuye03.github.io/" target="_blank" rel="noopener">Chuye Hong</a><sup>3</sup>,
+                <a href="https://haotianye.com/" target="_blank" rel="noopener">Haotian Ye</a><sup>5</sup>,
+                <a href="https://www.yixuanwang.me/" target="_blank" rel="noopener">Yixuan Wang</a><sup>2</sup>,
+                <a href="https://people.csail.mit.edu/travis/" target="_blank" rel="noopener">Travis Manderson</a><sup>4</sup>,
+                <a href="https://cs.stanford.edu/~ermon/" target="_blank" rel="noopener">Stefano Ermon</a><sup>5</sup>,
+                <a href="https://dawnsong.io/" target="_blank" rel="noopener">Dawn Song</a><sup>3</sup>,
+                <a href="https://qianqianwang68.github.io/" target="_blank" rel="noopener">Qianqian Wang</a><sup>1</sup>,
+                <a href="https://groups.csail.mit.edu/vision/torralbalab/" target="_blank" rel="noopener">Antonio Torralba</a><sup>4</sup>,
+                <a href="https://yewr.github.io/" target="_blank" rel="noopener">Weirui Ye</a><sup>4</sup>,
+                <a href="https://yilundu.github.io/" target="_blank" rel="noopener">Yilun Du</a><sup>1</sup>
             </div>
             <div class="affiliations">
                 <sup>1</sup>Harvard University &nbsp;&middot;&nbsp;
@@ -252,7 +66,14 @@
                 <sup>4</sup>MIT &nbsp;&middot;&nbsp;
                 <sup>5</sup>Stanford University
             </div>
-            <div class="authors" style="font-size: 0.85rem; margin-bottom: 20px;">
+            <div class="logos">
+                <img src="assets/img/logos/harvard.svg" alt="Harvard University" class="logo-harvard">
+                <img src="assets/img/logos/nvidia.svg" alt="NVIDIA" class="logo-nvidia">
+                <img src="assets/img/logos/berkeley.png" alt="UC Berkeley" class="logo-berkeley">
+                <img src="assets/img/logos/mit.svg" alt="MIT" class="logo-mit">
+                <img src="assets/img/logos/stanford.svg" alt="Stanford University" class="logo-stanford">
+            </div>
+            <div class="notes">
                 <sup>*</sup>Equal contribution &nbsp;&nbsp;
                 <sup>&dagger;</sup>Project lead &nbsp;&nbsp;
                 <sup>&Dagger;</sup>Core contributor
@@ -273,17 +94,18 @@
             </div>
         </header>
 
-        <section class="video-section">
-            <div class="video-wrapper">
-                <video id="mainVideo" controls preload="metadata">
-                    <source src="https://assets.robot-agent-exploration.com/static/rax_overview_light_v2.mp4" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-        </section>
+        <div class="video-wrapper">
+            <video id="mainVideo" controls autoplay muted loop playsinline preload="auto">
+                <source src="https://assets.robot-agent-exploration.com/static/rax_overview_light_v2.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
         <script>
         (function() {
             var main = document.getElementById('mainVideo');
+            // fetch the high-quality cut only once the light one is playing, so the rest of the page loads first
+            main.addEventListener('playing', function() { setTimeout(upgrade, 3000); }, {once: true});
+            function upgrade() {
             var hq = document.createElement('video');
             hq.preload = 'auto';
             hq.src = 'https://assets.robot-agent-exploration.com/static/rax_overview_v2.mp4';
@@ -294,67 +116,13 @@
                 main.currentTime = currentTime;
                 if (wasPlaying) main.play();
             }, {once: true});
-        })();
-        </script>
-
-        <section id="tasks">
-            <h2>Real-Robot Sessions</h2>
-            <p class="section-note">
-                Each video is a full session: the agent explores the task on the real robot, makes mistakes,
-                fixes them, and turns what works into its own programs. No demonstrations, no teleoperation,
-                no policy training. Select a task to watch its session.
-            </p>
-            <div class="task-tabs" id="taskTabs"></div>
-            <div class="video-wrapper">
-                <video id="taskVideo" controls preload="none" playsinline></video>
-            </div>
-            <div class="task-info">
-                <h3 id="taskTitle"></h3>
-                <div class="task-meta" id="taskMeta"></div>
-                <p class="task-desc" id="taskDesc"></p>
-            </div>
-        </section>
-        <script>
-        (function() {
-            var BASE = 'https://assets.robot-agent-exploration.com/static/tasks/';
-            var VER = '?v=1';
-            var TASKS = [
-                {id: 'find_the_cube', name: 'Find the Cube', meta: 'Franka · memory · 2 h 35 min session',
-                 desc: 'The operator hides a cube under one of four cups, at one point dropping it into a cup, and shuffles them. The agent learns to watch the shuffle from above, to follow the cube by its shape and height in depth rather than by its appearance, and to lift the right cup and pick up the cube.'},
-                {id: 'air_fry_pan', name: 'Air Fryer', meta: 'Franka · articulated object · 2 h 46 min session',
-                 desc: 'Open a heavy air-fryer drawer, put a banana (and later a ball) inside, and close it. The agent searches for a collision-free grasp on the handle, works out how far to pull and how to drop the banana, and turns the routine into a program that runs unattended.'},
-                {id: 'swipe_table', name: 'Wipe the Table', meta: 'Franka · deformable object · 3 h 25 min session',
-                 desc: 'Wipe a soy-sauce stain with a wet towel, on an arm without a force sensor. The agent learns to grab a thick wad of cloth, to infer contact from where the cloth stalls the arm, and to check with its cameras that the table is really clean.'},
-                {id: 'peg_insertion', name: 'Peg-in-Hole', meta: 'Franka · precision · ManipulationNet board · 4 h 39 min session',
-                 desc: 'The ManipulationNet peg-in-hole board, with rows of 3 mm, 1 mm and 0.1 mm clearance. The agent registers the board to its CAD model, finds holes by touch, and develops a wiggle-push that seats all three pegs in the 0.1 mm-clearance row.'},
-                {id: 'bandu', name: 'Bandu Tower', meta: 'Franka · precision stacking · 6 h 6 min session',
-                 desc: 'Rebuild a tower of seven irregular wooden blocks, with the finished tower as the only demonstration. The agent measures each piece by touch while taking the tower apart, then writes a program that takes the tower apart and rebuilds it on its own.'},
-                {id: 'rby1', name: 'RB-Y1: Six Chained Tasks', meta: 'Rainbow RB-Y1 · long-horizon, whole body · three runs',
-                 desc: 'One instruction, six steps across a room: park a chair, stack two cups, put the cups and a banana in a bucket, set the bucket on a cabinet, tuck the chair back, and place a box. The agent reuses skills it taught itself in earlier sessions and refines them after every run: 120, 117 and 98 minutes over three runs.'}
-            ];
-            var tabs = document.getElementById('taskTabs');
-            var video = document.getElementById('taskVideo');
-            function show(i) {
-                var t = TASKS[i];
-                video.poster = BASE + t.id + '_poster.jpg' + VER;
-                video.src = BASE + t.id + '.mp4' + VER;
-                document.getElementById('taskTitle').textContent = t.name;
-                document.getElementById('taskMeta').textContent = t.meta;
-                document.getElementById('taskDesc').textContent = t.desc;
-                Array.prototype.forEach.call(tabs.children, function(b, j) { b.classList.toggle('active', j === i); });
             }
-            TASKS.forEach(function(t, i) {
-                var b = document.createElement('button');
-                b.className = 'task-tab';
-                b.textContent = t.name;
-                b.addEventListener('click', function() { show(i); video.play(); });
-                tabs.appendChild(b);
-            });
-            show(0);
         })();
         </script>
+    </div>
 
-        <section>
+    <section class="block" id="abstract">
+        <div class="wrap abstract-wrap">
             <h2>Abstract</h2>
             <p class="abstract">
                 Robot learning has made substantial progress by scaling demonstration data and model capacity,
@@ -382,9 +150,128 @@
                 generalist robot-agent platform, on which a new robot can be brought up through an interface
                 alone, without data collection or policy training.
             </p>
-        </section>
+        </div>
+    </section>
 
-        <section>
+    <section class="block" id="how">
+        <div class="wrap">
+            <h2>How RAX works</h2>
+            <p class="lead">A coding agent learns a task on a real robot in four acts. Watch it on the air fryer: first the agent drives the arm itself through tool calls; then it writes what worked into a program; when one of the program&rsquo;s checks fails, control comes back to the agent to fix it; in the end the program runs on its own. Each clip is the robot&rsquo;s left camera; below it, what the agent or its program was doing at the same moments.</p>
+            <div class="card how2" id="howRoot">
+                <ol class="acts" aria-label="Four acts"></ol>
+                <div class="cc">
+                    <div class="pl-media">
+                        <video muted playsinline preload="auto" aria-label="Left camera of the air-fryer session"></video>
+                        <span class="pl-tag"></span>
+                        <div class="pl-progress"><span></span></div>
+                        <button type="button" class="pl-btn" aria-label="Pause"><svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+                    </div>
+                    <div class="cc-side">
+                        <div class="pl-now" aria-live="polite">
+                            <div class="k how-k"></div>
+                            <h3 class="how-h"></h3>
+                            <p class="how-p"></p>
+                            <p class="how-stat"></p>
+                        </div>
+                    </div>
+                    <div class="cc-code">
+                        <div class="cc-code-head"></div>
+                        <pre class="cc-pre"></pre>
+                        <div class="cc-feed" hidden></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="block" id="tasks">
+        <div class="wrap">
+            <h2>Real-robot sessions</h2>
+            <p class="lead">
+                Each session starts from the task text alone: the agent explores the task on the real robot, makes mistakes,
+                fixes them, and turns what works into its own programs. No demonstrations, no teleoperation,
+                no policy training. Pick a task; the session and the program play chapter by chapter.
+            </p>
+            <div id="sessRoot">
+                <div class="seg" id="sessTabs"></div>
+                <div class="sess-body"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="block" id="model">
+        <div class="wrap">
+            <h2>A 3D model it built for itself</h2>
+            <p class="lead">No model of the air fryer was given. From what it measured in its first manual run, the agent wrote an articulated model, a fixed body and a drawer on a prismatic joint, placed it on the point cloud of each new scene, and planned its actions on it. Drag to orbit, scroll to zoom.</p>
+            <div class="card three" id="fryerRoot">
+                <div class="three-view">
+                    <div class="loading">Loading the point cloud&hellip;</div>
+                    <span class="hint">Left camera, final run. Points are the camera&rsquo;s depth in the robot&rsquo;s frame.</span>
+                </div>
+                <div class="three-side">
+                    <div class="slider">
+                        <label for="fryerOpen">Drawer opening <output id="fryerOpenOut">0.0 cm</output></label>
+                        <input type="range" id="fryerOpen" min="0" max="131" value="0" step="1">
+                    </div>
+                    <p id="fryerStatus" aria-live="polite"></p>
+                    <div class="toggles">
+                        <label><input type="checkbox" data-layer="cloud" checked> Point cloud</label>
+                        <label><input type="checkbox" data-layer="model" checked> <span class="sw" style="--c:#7b3fd1"></span> The agent&rsquo;s model</label>
+                        <label><input type="checkbox" data-layer="actions" checked> <span class="sw" style="--c:#e34948"></span> Planned hand poses</label>
+                    </div>
+                    <dl class="facts">
+                        <dt>c, d</dt><dd>Axis from a circle fit to the lid; pull direction from the handle&rsquo;s points. Estimated in every scene.</dd>
+                        <dt>opening</dt><dd>Measured from the shift of the handle face after the pull.</dd>
+                        <dt>sizes</dt><dd>Radii, heights and handle size, fixed from the agent&rsquo;s own measurements.</dd>
+                        <dt>checks</dt><dd>Every planned motion is checked for clearance against the model at the current opening.</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="block" id="results">
+        <div class="wrap">
+            <h2>Performance grows with exploration</h2>
+            <p class="lead">In simulation, the program RAX submits is evaluated alone on unseen scenes. Averaged over five benchmarks, the score rises from 25 with 4 exploration episodes to 79, against 41 for the strongest prior models. Hover the chart for each benchmark.</p>
+            <div class="card chart-card">
+                <div class="chart-head">
+                    <h3>Mean score on unseen scenes (%)</h3>
+                    <div class="legend">
+                        <span><i class="line" style="--c:var(--rax)"></i>RAX</span>
+                        <span><i class="line" style="--c:var(--base-ink)"></i>Strongest prior models</span>
+                        <span><i class="line" style="--c:var(--base)"></i>Each benchmark</span>
+                    </div>
+                </div>
+                <svg class="chart" id="scalingChart" role="img" aria-label="Mean score on unseen scenes against exploration budget: 24.9, 35.9, 62.3, 66.8 and 78.6 at 4, 8, 16, 32 and 128 episodes; strongest prior models 41.2."></svg>
+                <p class="note">Mean over RoboDojo, BEHAVIOR-1K, HumanoidArena, DexJoCo (bimanual tasks) and LIBERO-Pro, averaged within each benchmark first. Budgets of 64 count at 128.</p>
+            </div>
+
+            <h3 class="sub-h">Benchmark by benchmark</h3>
+            <div class="seg" id="benchTabs"></div>
+            <div id="benchRoot">
+                <p class="bench-setting" id="benchSetting"></p>
+                <div class="card chart-card">
+                    <div class="chart-head">
+                        <h3 id="benchMetric"></h3>
+                        <div class="legend">
+                            <span><i style="--c:var(--rax)"></i>RAX</span>
+                            <span><i style="--c:var(--base)"></i>Best prior model on each task</span>
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto"><svg class="chart" id="benchBars" role="img" aria-label="RAX against the best prior model on each task" style="min-width:560px"></svg></div>
+                    <details class="table-toggle">
+                        <summary>Full table</summary>
+                        <div class="tbl-wrap" id="benchTable"></div>
+                        <p class="note" id="benchNote"></p>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="block" id="bibtex">
+        <div class="wrap">
             <h2>BibTeX</h2>
             <div class="bibtex-box">@article{rax2025,
   title   = {Scaling Online Exploration for Robot Agents},
@@ -392,11 +279,18 @@
   journal = {arXiv preprint arXiv:XXXX.XXXXX},
   year    = {2025}
 }</div>
-        </section>
+        </div>
+    </section>
 
-        <footer>
-            RAX &mdash; Scaling Online Exploration for Robot Agents
-        </footer>
-    </div>
+    <footer>RAX &mdash; Scaling Online Exploration for Robot Agents</footer>
+
+    <script src="assets/js/data.js"></script>
+    <script src="assets/js/content.js"></script>
+    <script src="assets/js/sessions.js"></script>
+    <script src="assets/js/code.js"></script>
+    <script src="assets/js/activity.js"></script>
+    <script src="assets/js/site.js"></script>
+    <script src="assets/js/how.js"></script>
+    <script type="module" src="assets/js/fryer3d.js"></script>
 </body>
 </html>
