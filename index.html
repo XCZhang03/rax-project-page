@@ -210,7 +210,6 @@
         .figure img { display: block; width: 100%; }
         .case { display: block; cursor: zoom-in; }
         .case img { aspect-ratio: auto; }
-        .tab .fig-n { opacity: 0.55; margin-right: 7px; font-variant-numeric: tabular-nums; }
 
         /* ---------------- abstract / bibtex ---------------- */
         /* Abstract and BibTeX: heading on the left, text filling the rest of the width. */
@@ -572,10 +571,10 @@
     (function() {
         /* Figures from the paper, converted from their source PDFs to vector SVG. */
         var FIGS = [
-            {n: 4, file: 'fig04_rby1', name: 'Long-horizon RB-Y1', alt: 'A long-horizon task on the real RB-Y1'},
-            {n: 5, file: 'fig05_boxing', name: 'BEHAVIOR-1K boxing', alt: 'The program RAX writes for boxing books on BEHAVIOR-1K'},
-            {n: 24, file: 'fig24_airfry_program', name: 'Air-fryer program', alt: 'The air-fryer program'},
-            {n: 31, file: 'fig31_peg_program', name: 'Peg insertion', alt: 'The peg-insertion procedure'}
+            {n: 4, file: 'fig04_rby1', name: 'RB-Y1: Tidy Up a Lab Corner', alt: 'A long-horizon task on the real RB-Y1'},
+            {n: 5, file: 'fig05_boxing', name: 'BEHAVIOR-1K: Boxing Books', alt: 'The program RAX writes for boxing books on BEHAVIOR-1K'},
+            {n: 24, file: 'fig24_airfry_program', name: 'Air Fryer', alt: 'The air-fryer program'},
+            {n: 31, file: 'fig31_peg_program', name: 'Peg-in-Hole', alt: 'The peg-insertion procedure'}
         ];
         var tabs = document.getElementById('caseTabs');
         var img = document.getElementById('caseImg');
@@ -583,18 +582,14 @@
         function show(i) {
             var f = FIGS[i], src = 'figures/paper/' + f.file + '.svg';
             img.src = src;
-            img.alt = 'Figure ' + f.n + ': ' + f.alt;
+            img.alt = f.alt;
             link.href = src;
             Array.prototype.forEach.call(tabs.children, function(b, j) { b.classList.toggle('on', j === i); });
         }
         FIGS.forEach(function(f, i) {
             var b = document.createElement('button');
             b.className = 'tab';
-            var n = document.createElement('span');
-            n.className = 'fig-n';
-            n.textContent = 'Fig. ' + f.n;
-            b.appendChild(n);
-            b.appendChild(document.createTextNode(f.name));
+            b.textContent = f.name;
             b.addEventListener('click', function() { show(i); });
             tabs.appendChild(b);
         });
