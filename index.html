@@ -203,7 +203,7 @@
         .bar i { flex: none; }
         .bar i { display: block; height: 10px; border-radius: 2px; background: var(--rule); }
         .bar.code i { background: var(--accent); }
-        .note { font-size: 0.82rem; color: var(--muted); margin-top: 14px; }
+        .sub-h { font-weight: 800; font-stretch: 88%; font-size: 1.45rem; color: var(--head); letter-spacing: -0.01em; margin: 48px 0 16px; }
 
         /* ---------------- method ---------------- */
         .figure { background: #fff; border: 1px solid var(--faint); border-radius: 8px; padding: 24px; }
@@ -266,7 +266,6 @@
         <div class="nav-links" id="navLinks">
             <a href="#overview">Overview</a>
             <a href="#tasks">Real robots</a>
-            <a href="#code">Programs</a>
             <a href="#method">Method</a>
             <a href="#cases">Case studies</a>
             <a href="#abstract">Abstract</a>
@@ -532,9 +531,13 @@
     })();
     </script>
 
-    <section id="code">
-        <h2>Exploration compiles into code</h2>
-        <p class="lede">What the agent once worked out step by step becomes a program that runs on its own.</p>
+    <section id="method">
+        <h2>Method</h2>
+        <p class="lede">A frozen LLM coding agent drives the robot through its perception and control interfaces. What it learns lives in its workspace: notes, programs and verified skills.</p>
+        <div class="figure">
+            <img src="figures/paper/fig02_architecture.svg" alt="RAX architecture: a frozen-LLM coding agent reads and writes memory, perceives through RGB-D, acts through the robot control SDK, and writes robot programs." loading="lazy">
+        </div>
+        <h3 class="sub-h">Exploration compiles into code</h3>
         <div class="speed">
             <div class="card">
                 <div class="x">241<span>&times;</span></div>
@@ -548,15 +551,6 @@
                 <div class="bar"><i style="width: 62%"></i>Agent, 17 min</div>
                 <div class="bar code"><i style="width: 21%"></i>Fully automated program by RAX, 10 s</div>
             </div>
-        </div>
-        <p class="note">Time for one success on the Franka. Bars on a log scale.</p>
-    </section>
-
-    <section id="method">
-        <h2>How it works</h2>
-        <p class="lede">A frozen LLM coding agent drives the robot through its perception and control interfaces. What it learns lives in its workspace: notes, programs and verified skills.</p>
-        <div class="figure">
-            <img src="figures/paper/fig02_architecture.svg" alt="RAX architecture: a frozen-LLM coding agent reads and writes memory, perceives through RGB-D, acts through the robot control SDK, and writes robot programs." loading="lazy">
         </div>
     </section>
 
