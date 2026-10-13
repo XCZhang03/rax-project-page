@@ -140,93 +140,131 @@
     return c;
   }
 
-  /* ---------------- media player: a clip or still per item, a step list, autoplay ---------------- */
-  // items: {vid, poster, img, compare, tag, kicker, color, title, text, quote, branch, code, chip, meta}
+  /* ---------------- case card: one player for the session chapters and the program steps ---------------- */
+  // groups: [{name, items:[{vid, poster, img, compare, tag, title, text, quote, branch, kicker, color, meta, chip, code:[line idx]}]}]
+  // code: {file, lines:[{t, s:[step idx]}]} shown under the player; lines of the current program step are highlighted.
   var ASSET = 'assets/';
-  function player(host, items, opts) {
+  var PLAY_SVG = '<svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  function hlPy(code) {
+    var hash = code.indexOf('#');
+    var body = hash >= 0 ? code.slice(0, hash) : code, com = hash >= 0 ? code.slice(hash) : '';
+    var h = esc(body)
+      .replace(/\b(def|for|in|if|elif|else|while|return|not|is|None|or|and|try|except|raise|break|continue|True|False|with|as|lambda)\b/g, '<span class="kw">$1</span>')
+      .replace(/(raise \w+\([^)]*\)|return False|StepFailure|Unsure)/g, '<span class="err">$1</span>');
+    return h + (com ? '<span class="c">' + esc(com) + '</span>' : '');
+  }
+  function caseCard(host, groups, code, opts) {
     opts = opts || {};
-    var STILL_MS = opts.stillMs || 3200;
-    var box = el('div', { class: 'pl card' });
+    var STILL_MS = 3200;
+    var items = [];
+    groups.forEach(function (g, gi) { g.items.forEach(function (it, k) { it.g = gi; it.k = k; items.push(it); }); });
+    var box = el('div', { class: 'cc card' });
     var media = el('div', { class: 'pl-media' });
-    var video = el('video', { muted: '', playsinline: '', preload: 'none', 'aria-label': opts.label || 'Clip' });
+    var video = el('video', { muted: '', playsinline: '', preload: 'none' });
     video.muted = true;
     var still = el('div', { class: 'pl-still' });
     var tag = el('span', { class: 'pl-tag' });
     var bar = el('span'); var prog = el('div', { class: 'pl-progress' }, [bar]);
-    var btn = el('button', { type: 'button', class: 'pl-btn', 'aria-label': 'Pause' });
-    btn.innerHTML = '<svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
-    media.appendChild(video); media.appendChild(still); media.appendChild(tag); media.appendChild(prog); media.appendChild(btn);
-    var side = el('div', { class: 'pl-side' });
+    var btn = el('button', { type: 'button', class: 'pl-btn', 'aria-label': 'Pause', html: PLAY_SVG });
+    [video, still, tag, prog, btn].forEach(function (n) { media.appendChild(n); });
+    var side = el('div', { class: 'cc-side' });
     var now = el('div', { class: 'pl-now', 'aria-live': 'polite' });
-    var list = el('ol', { class: 'pl-list' });
-    side.appendChild(now); side.appendChild(list);
+    var nav = el('div', { class: 'cc-nav' });
+    side.appendChild(now); side.appendChild(nav);
     box.appendChild(media); box.appendChild(side);
-    host.appendChild(box);
-    var rows = items.map(function (it, i) {
-      var b = el('button', { type: 'button' }, [el('span', { class: 'n', text: String(i + 1) }), el('span', { class: 't', text: it.title }), it.meta ? el('span', { class: 'm', text: it.meta }) : null, el('span', { class: 'f' })]);
-      if (it.color) b.style.setProperty('--pc', it.color);
-      b.addEventListener('click', function () { show(i, true); });
-      var li = el('li', {}, [b]);
-      list.appendChild(li);
-      return b;
+    var dots = [];
+    groups.forEach(function (g, gi) {
+      var row = el('div', { class: 'cc-row' }, [el('span', { class: 'cc-g', text: g.name })]);
+      var d = el('div', { class: 'cc-dots' });
+      g.items.forEach(function (it) {
+        var i = items.indexOf(it);
+        var b = el('button', { type: 'button', title: it.title, 'aria-label': g.name + ' ' + (it.k + 1) + ': ' + it.title }, [el('i', { text: String(it.k + 1) })]);
+        b.style.setProperty('--pc', it.color || 'var(--rax)');
+        b.addEventListener('click', function () { show(i, true); });
+        d.appendChild(b); dots[i] = b;
+      });
+      row.appendChild(d); nav.appendChild(row);
     });
-    var cur = 0, playing = !reduced, visible = false, timer = null, t0 = 0, dur = 0, raf = null;
-    function stopTimers() { clearTimeout(timer); cancelAnimationFrame(raf); }
-    function fill(k) { bar.style.width = (k * 100) + '%'; var f = rows[cur].querySelector('.f'); f.style.width = (k * 100) + '%'; }
-    function tickStill(now) { var k = Math.min(1, (now - t0) / dur); fill(k); if (k < 1) raf = requestAnimationFrame(tickStill); }
+    var codeBody = null, codeHead = null, codeLines = [];
+    if (code) {
+      var cb = el('div', { class: 'cc-code' });
+      codeHead = el('div', { class: 'cc-code-head' });
+      codeBody = el('pre', { class: 'cc-pre' });
+      codeBody.innerHTML = code.lines.map(function (l) {
+        var m = code.skills && l.t.match(/^(\s*)(chair|cups|bucket|box)\.(\w+)(.*)$/);
+        var h = m ? esc(m[1]) + '<span class="call" style="color:var(' + code.skills[m[2]] + ')">' + m[2] + '.' + m[3] + '</span>' + hlPy(m[4]) : hlPy(l.t);
+        return '<span class="ln">' + (h || ' ') + '</span>';
+      }).join('');
+      codeLines = Array.prototype.slice.call(codeBody.children);
+      cb.appendChild(codeHead); cb.appendChild(codeBody);
+      box.appendChild(cb);
+    }
+    host.appendChild(box);
+    var cur = 0, playing = !reduced, visible = false, timer = null, t0 = 0, raf = null;
+    function stop() { clearTimeout(timer); cancelAnimationFrame(raf); }
+    function fill(k) { bar.style.width = (k * 100) + '%'; }
+    function tickStill(t) { var k = Math.min(1, (t - t0) / STILL_MS); fill(k); if (k < 1) raf = requestAnimationFrame(tickStill); }
     function render() {
-      var it = items[cur];
-      rows.forEach(function (r, j) { r.setAttribute('aria-current', j === cur ? 'step' : 'false'); r.classList.toggle('past', j < cur); r.querySelector('.f').style.width = j < cur ? '100%' : '0%'; });
+      var it = items[cur], g = groups[it.g];
+      dots.forEach(function (b, j) { b.setAttribute('aria-current', j === cur ? 'step' : 'false'); b.classList.toggle('past', j < cur); });
       now.innerHTML = '';
-      var k = el('div', { class: 'k', text: (opts.kicker ? opts.kicker(it, cur, items.length) : (cur + 1) + ' / ' + items.length) });
-      if (it.color) k.style.color = it.color;
+      var k = el('div', { class: 'k', text: g.name + ' ' + (it.k + 1) + '/' + g.items.length + (it.kicker ? ' · ' + it.kicker : '') });
+      k.style.color = it.color || 'var(--rax)';
       now.appendChild(k);
       now.appendChild(el('h3', { text: it.title }));
       if (it.chip) now.appendChild(it.chip());
       if (it.text) now.appendChild(el('p', { text: it.text }));
       if (it.quote) now.appendChild(el('blockquote', { text: '“' + it.quote + '”' }));
       if (it.branch) now.appendChild(el('div', { class: 'branch', text: it.branch }));
-      if (it.code) { var c = el('div', { class: 'pl-code', html: it.code }); if (it.codeColor) c.style.setProperty('--skc', it.codeColor); now.appendChild(c); }
       tag.textContent = it.tag || ''; tag.hidden = !it.tag;
       still.innerHTML = '';
       if (it.vid) {
         still.hidden = true; video.hidden = false;
         video.poster = ASSET + it.poster;
-        if (video.getAttribute('src') !== ASSET + it.vid) { video.src = ASSET + it.vid; }
-        video.currentTime = 0;
+        if (video.getAttribute('src') !== ASSET + it.vid) video.src = ASSET + it.vid;
+        try { video.currentTime = 0; } catch (e) { /* not loaded yet */ }
       } else {
         video.hidden = true; video.pause(); still.hidden = false;
         if (it.compare) still.appendChild(compare(IMGP + it.compare[0], IMGP + it.compare[1], ['Before', 'After'], true));
         else still.appendChild(el('img', { src: IMGP + it.img, alt: it.title }));
       }
-      // warm the next clip
+      if (codeBody) {
+        var hl = it.code || [];
+        codeHead.textContent = (it.code ? 'Running: ' : 'The program it wrote: ') + code.file;
+        codeBody.classList.toggle('focus', hl.length > 0);
+        codeLines.forEach(function (ln, j) { ln.classList.toggle('on', hl.indexOf(j) >= 0); });
+        if (hl.length) {
+          var first = codeLines[hl[0]];
+          codeBody.scrollTo({ top: Math.max(0, first.offsetTop - codeBody.offsetTop - 30), behavior: reduced ? 'auto' : 'smooth' });
+        }
+      }
       var nx = items[(cur + 1) % items.length];
-      if (nx.vid) { var l = document.createElement('link'); l.rel = 'prefetch'; l.href = ASSET + nx.vid; l.as = 'video'; document.head.appendChild(l); }
+      if (nx.vid && !nx.warm) { nx.warm = true; var l = document.createElement('link'); l.rel = 'prefetch'; l.href = ASSET + nx.vid; document.head.appendChild(l); }
       arm();
     }
     function arm() {
-      stopTimers(); fill(0);
+      stop(); fill(0);
       var it = items[cur];
-      if (!playing || !visible) { if (it.vid) video.pause(); return; }
+      if (!playing || !visible) { video.pause(); return; }
       if (it.vid) { var p = video.play(); if (p && p.catch) p.catch(function () {}); }
-      else { t0 = performance.now(); dur = STILL_MS; raf = requestAnimationFrame(tickStill); timer = setTimeout(next, STILL_MS); }
+      else { t0 = performance.now(); raf = requestAnimationFrame(tickStill); timer = setTimeout(next, STILL_MS); }
     }
     function next() { show((cur + 1) % items.length); }
-    function show(i, user) { cur = i; render(); if (user) rows[i].focus({ preventScroll: true }); }
+    function show(i, user) { cur = i; render(); if (user) dots[i].focus({ preventScroll: true }); }
     video.addEventListener('timeupdate', function () { if (video.duration) fill(video.currentTime / video.duration); });
-    video.addEventListener('ended', function () { fill(1); if (playing && visible) timer = setTimeout(next, 250); });
+    video.addEventListener('ended', function () { fill(1); if (playing && visible) timer = setTimeout(next, 200); });
     function sync() { btn.classList.toggle('paused', !playing); btn.setAttribute('aria-label', playing ? 'Pause' : 'Play'); }
     btn.addEventListener('click', function () { playing = !playing; sync(); arm(); });
     box.addEventListener('keydown', function (e) {
       if (e.target.closest('.compare')) return;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { show((cur + 1) % items.length, true); e.preventDefault(); }
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { show((cur - 1 + items.length) % items.length, true); e.preventDefault(); }
+      if (e.key === 'ArrowRight') { show((cur + 1) % items.length, true); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { show((cur - 1 + items.length) % items.length, true); e.preventDefault(); }
     });
     if ('IntersectionObserver' in window) {
-      new IntersectionObserver(function (es) { var v = es[0].isIntersecting; if (v !== visible) { visible = v; arm(); } }, { threshold: 0.35 }).observe(media);
+      new IntersectionObserver(function (es) { var v = es[0].isIntersecting; if (v !== visible) { visible = v; arm(); } }, { threshold: 0.3 }).observe(media);
     } else { visible = true; }
     sync(); render();
-    return { destroy: function () { stopTimers(); video.pause(); video.removeAttribute('src'); video.load(); box.remove(); } };
+    return { destroy: function () { stop(); video.pause(); video.removeAttribute('src'); video.load(); box.remove(); } };
   }
 
   /* ---------------- real-robot sessions: one tab per task ---------------- */
@@ -235,50 +273,54 @@
     if (!root) return;
     var SKV = { chair: '--sk-chair', cups: '--sk-cups', bucket: '--sk-bucket', box: '--sk-box' };
     var PH = ['--ph-1', '--ph-2', '--ph-3', '--ph-4'];
-    var STATUS = { success: ['Success', '--new'], fail: ['Failure', '--warn'], fix: ['Fix', '--amber'], explore: ['Exploring', '--rax'] };
+    var STATUS = { success: ['success', '--new'], fail: ['failure', '--warn'], fix: ['fix', '--amber'], explore: ['exploring', '--rax'] };
     var BASE = 'https://assets.robot-agent-exploration.com/static/tasks/';
-    var players = [];
-    function chapterItems(id) {
+    var card = null;
+    function chapters(id) {
       var S = (D.sessions || {})[id];
-      if (!S) return null;
+      if (!S) return [];
       return S.chapters.map(function (c) {
         var st = STATUS[c.status] || STATUS.explore;
         return { vid: c.vid.replace(/^assets\//, ''), poster: c.poster.replace(/^assets\//, ''), title: c.title, text: c.text, quote: c.quote,
-                 meta: c.when, color: 'var(' + st[1] + ')', kickerText: st[0] + (c.when ? ' · ' + c.when : '') };
+                 color: 'var(' + st[1] + ')', kicker: st[0] + (c.when ? ', ' + c.when : '') };
       });
     }
-    function programItems(prog) {
+    function linesFor(code, step) {
+      var out = [];
+      if (code) code.lines.forEach(function (l, j) { if (l.s && l.s.indexOf(step) >= 0) out.push(j); });
+      return out;
+    }
+    function steps(prog, code) {
       var keys = Object.keys(prog.phases);
-      return prog.steps.map(function (s) {
-        var col = 'var(' + PH[keys.indexOf(s.phase) % PH.length] + ')';
+      return prog.steps.map(function (s, i) {
         return { vid: s.vid, poster: s.poster, img: s.img, compare: s.compare, tag: s.tag, title: s.title, text: s.text, branch: s.branch,
-                 color: col, kickerText: prog.phases[s.phase] };
+                 color: 'var(' + PH[keys.indexOf(s.phase) % PH.length] + ')', kicker: prog.phases[s.phase], code: linesFor(code, i) };
       });
     }
-    function stageItems() {
-      return D.rby1.stages.map(function (st, i) {
+    // RB-Y1: the six stages, and the agent's commands for each as the code
+    function rby1() {
+      var lines = [];
+      var items = D.rby1.stages.map(function (st, i) {
         var k = st.skills[0], sk = D.skills[k];
-        var code = st.code.map(function (line) {
-          var h = line.indexOf('#'), b = h >= 0 ? line.slice(0, h) : line, c = h >= 0 ? line.slice(h) : '';
-          var m = b.match(/^(\s*)(chair|cups|bucket|box)\.(\w+)(.*)$/);
-          var out = m ? esc(m[1]) + '<span class="call">' + m[2] + '.' + m[3] + '</span>' + esc(m[4]) : esc(b);
-          return out + (c ? '<span class="c">' + esc(c) + '</span>' : '');
-        }).join('\n');
-        return { vid: st.vid, poster: st.poster, img: st.img, tag: 'done at ' + st.time, title: st.title, meta: st.time,
-                 color: 'var(' + SKV[k] + ')', codeColor: 'var(' + SKV[k] + ')', code: code, kickerText: 'Stage ' + (i + 1) + ' of 6',
+        if (i) lines.push({ t: '', s: [] });
+        lines.push({ t: '# ' + (i + 1) + '. ' + st.title.toLowerCase() + '  (done ' + st.time + ')', s: [i] });
+        st.code.forEach(function (c) { lines.push({ t: c, s: [i] }); });
+        return { vid: st.vid, poster: st.poster, img: st.img, tag: 'done at ' + st.time, title: st.title, text: '',
+                 color: 'var(' + SKV[k] + ')', kicker: 'calls ' + sk.name,
                  chip: function () {
                    var d = el('div', { class: 'pl-skill' });
                    d.style.setProperty('--skc', 'var(' + SKV[k] + ')');
                    d.appendChild(el('img', { src: IMGP + sk.img, alt: '', loading: 'lazy' }));
-                   d.appendChild(el('div', {}, [el('span', { class: 'small muted', text: 'Calls a skill from an earlier session' }), el('b', { text: sk.name }), el('span', { text: sk.what })]));
+                   d.appendChild(el('div', {}, [el('span', { class: 'small muted', text: 'Learned in an earlier session' }), el('b', { text: sk.name }), el('span', { text: sk.what })]));
                    return d;
                  } };
       });
+      var code = { file: 'the agent’s commands in the final run, condensed (in colour: calls into a stored skill)', lines: lines, skills: SKV };
+      items.forEach(function (it, i) { it.code = linesFor(code, i); });
+      return { items: items, code: code };
     }
-    var kick = function (it) { return it.kickerText; };
     function render(i) {
-      players.forEach(function (p) { p.destroy(); });
-      players = [];
+      if (card) card.destroy();
       var t = D.sessionTasks[i];
       var body = $('.sess-body', root);
       body.innerHTML = '';
@@ -287,22 +329,19 @@
       head.appendChild(el('div', { class: 'task-meta', text: t.meta }));
       head.appendChild(el('p', { class: 'task-desc', text: t.desc }));
       body.appendChild(head);
-      var ch = chapterItems(t.key);
-      if (ch) {
-        body.appendChild(el('h4', { class: 'sess-sub', text: 'The session, chapter by chapter' }));
-        var h1 = el('div'); body.appendChild(h1);
-        players.push(player(h1, ch, { kicker: kick, label: t.name + ' session' }));
-      }
-      var items = t.key === 'rby1' ? stageItems() : programItems(D.programs.filter(function (p) { return p.id === t.key; })[0]);
-      body.appendChild(el('h4', { class: 'sess-sub', text: t.key === 'rby1' ? 'The final run: six stages from four stored skills' : 'The program it wrote' }));
-      if (t.key !== 'rby1') {
-        var prog = D.programs.filter(function (p) { return p.id === t.key; })[0];
-        body.appendChild(el('p', { class: 'sess-note', text: prog.summary }));
+      var groups = [], code = null;
+      var ch = chapters(t.key);
+      if (ch.length) groups.push({ name: 'Session', items: ch });
+      if (t.key === 'rby1') {
+        var r = rby1(); code = r.code;
+        groups.push({ name: 'Final run', items: r.items });
       } else {
-        body.appendChild(el('p', { class: 'sess-note', text: 'Four skills learned in earlier practice sessions, two of them used twice; the glue between them the agent wrote on the spot. Side camera, played fast.' }));
+        var prog = D.programs.filter(function (p) { return p.id === t.key; })[0];
+        code = (D.code || {})[t.key] || null;
+        groups.push({ name: 'Program', items: steps(prog, code) });
       }
-      var h2 = el('div'); body.appendChild(h2);
-      players.push(player(h2, items, { kicker: kick, label: t.name + ' program' }));
+      var host = el('div'); body.appendChild(host);
+      card = caseCard(host, groups, code);
       var det = el('details', { class: 'sess-full' });
       det.appendChild(el('summary', { text: 'Watch the full session video (' + t.length + ')' }));
       var v = el('video', { controls: '', preload: 'none', playsinline: '', poster: BASE + t.video + '_poster.jpg?v=1' });

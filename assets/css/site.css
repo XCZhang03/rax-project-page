@@ -340,11 +340,11 @@ footer { text-align: center; padding: 48px 0 40px; font-size: 0.85rem; color: va
   .logos .logo-mit { height: 20px; }
   .logos .logo-stanford { height: 32px; }
 }
-/* dark mode: dark-red / black-on-transparent marks sit on one light rounded strip */
+/* dark mode: no backing; MIT's dark-red mark becomes a light silhouette */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .logos { width: fit-content; max-width: 100%; padding: 8px 20px; background: #eef0f3; border-radius: 12px; }
+  :root:not([data-theme="light"]) .logos .logo-mit { filter: brightness(0) invert(.9); }
 }
-:root[data-theme="dark"] .logos { width: fit-content; max-width: 100%; padding: 8px 20px; background: #eef0f3; border-radius: 12px; }
+:root[data-theme="dark"] .logos .logo-mit { filter: brightness(0) invert(.9); }
 
 /* ---------- how it works: camera video over the diagram ---------- */
 .how-figure { position: relative; }
@@ -371,8 +371,8 @@ footer { text-align: center; padding: 48px 0 40px; font-size: 0.85rem; color: va
 .pl-now h3 { margin: 2px 0 6px; }
 .pl-now p { font-size: 0.92rem; color: var(--ink-2); }
 .pl-now blockquote { margin-top: 8px; font-size: 0.86rem; color: var(--ink-2); border-left: 3px solid var(--line); padding-left: 10px; font-style: italic; }
-.pl-now .branch { margin-top: 6px; font-size: 0.86rem; color: var(--ink-2); display: flex; gap: 6px; align-items: baseline; }
-.pl-now .branch::before { content: '\21BA'; color: var(--muted); font-weight: 700; }
+.pl-now .branch { margin-top: 6px; font-size: 0.86rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.pl-now .branch::before { content: '\21BA'; color: var(--muted); font-weight: 700; margin-right: 6px; }
 .pl-code { margin-top: 8px; background: var(--sunk); border-radius: 8px; font-family: var(--mono); font-size: 0.72rem; line-height: 1.6; padding: 8px 10px; white-space: pre; overflow-x: auto; }
 .pl-code .call { color: var(--skc); font-weight: 700; }
 .pl-code .c { color: var(--muted); }
@@ -415,3 +415,26 @@ footer { text-align: center; padding: 48px 0 40px; font-size: 0.85rem; color: va
 .race-bar { height: 12px; background: var(--sunk); border-radius: 4px; overflow: hidden; }
 .race-bar span { display: block; height: 100%; border-radius: 4px; background: var(--c); }
 .race-line .t { font-family: var(--mono); font-size: 0.8rem; text-align: right; }
+
+/* ---------- case card: session + program in one player, code underneath ---------- */
+.cc { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); overflow: hidden; }
+.cc-side { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cc-nav { margin-top: auto; display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+.cc-row { display: grid; grid-template-columns: 74px 1fr; align-items: center; gap: 6px; }
+.cc-g { font-size: 0.74rem; font-weight: 800; color: var(--muted); }
+.cc-dots { display: flex; flex-wrap: wrap; gap: 4px; }
+.cc-dots button { border: none; background: none; padding: 1px; cursor: pointer; border-radius: 50%; }
+.cc-dots i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--pc); color: var(--pc); font-style: normal; font-size: 0.7rem; font-weight: 800; background: var(--surface); transition: background .15s, color .15s; }
+.cc-dots button.past i { background: color-mix(in srgb, var(--pc) 16%, var(--surface)); }
+.cc-dots button[aria-current="step"] i { background: var(--pc); color: #fff; }
+.cc-code { grid-column: 1 / -1; border-top: 1px solid var(--line); background: var(--sunk); }
+.cc-code-head { font-size: 0.78rem; font-weight: 800; color: var(--ink-2); padding: 8px 16px; border-bottom: 1px solid var(--line); font-family: var(--mono); }
+.cc-pre { font-family: var(--mono); font-size: 0.74rem; line-height: 1.62; padding: 8px 0; height: 250px; overflow: auto; }
+.cc-pre .ln { display: block; padding: 0 16px; white-space: pre; border-left: 3px solid transparent; transition: opacity .25s, background .25s; }
+.cc-pre .kw { color: var(--code); font-weight: 600; }
+.cc-pre .err { color: var(--warn); font-weight: 600; }
+.cc-pre .c { color: var(--muted); }
+.cc-pre.focus .ln { opacity: .4; }
+.cc-pre.focus .ln.on { opacity: 1; background: var(--rax-soft); border-left-color: var(--rax); }
+@media (max-width: 860px) { .cc { grid-template-columns: 1fr; } .cc-pre { height: 220px; } }
+.cc-pre .call { font-weight: 700; }
