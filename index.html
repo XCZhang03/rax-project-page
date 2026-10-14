@@ -153,10 +153,17 @@
         .org { display: flex; align-items: flex-start; gap: 3px; }
         .org sup { font-size: 0.72rem; line-height: 1; }
         .org img { display: block; width: auto; height: var(--h); }
+        /* Dark theme: swap in .dk variants; single-color marks go white. */
+        .org img.dk { display: none; }
         @media (prefers-color-scheme: dark) {
-            :root:not([data-theme="light"]) .org img { background: #fff; padding: 4px; border-radius: 4px; }
+            :root:not([data-theme="light"]) .org img.lt { display: none; }
+            :root:not([data-theme="light"]) .org img.dk { display: block; }
+            :root:not([data-theme="light"]) .org img.mono { filter: brightness(0) invert(1); }
         }
-        :root[data-theme="dark"] .org img { background: #fff; padding: 4px; border-radius: 4px; }
+        :root[data-theme="dark"] .org img.lt { display: none; }
+        :root[data-theme="dark"] .org img.dk { display: block; }
+        :root[data-theme="dark"] .org img.mono { filter: brightness(0) invert(1); }
+        ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.4s; animation-timing-function: ease; }
         .notes span { display: inline-block; margin-right: 18px; white-space: nowrap; }
         .notes { margin-top: 14px; font-size: 0.8rem; color: var(--muted); }
 
@@ -456,10 +463,10 @@
         </p>
         <div class="orgs">
             <div class="org" title="Harvard University"><sup>1</sup><img src="figures/logos/harvard.svg" alt="Harvard University" style="--h: 42px"></div>
-            <div class="org" title="NVIDIA"><sup>2</sup><img src="figures/logos/nvidia.svg" alt="NVIDIA" style="--h: 26px"></div>
-            <div class="org" title="UC Berkeley"><sup>3</sup><img src="figures/logos/berkeley.svg" alt="UC Berkeley" style="--h: 42px"></div>
-            <div class="org" title="MIT"><sup>4</sup><img src="figures/logos/mit.svg" alt="MIT" style="--h: 28px"></div>
-            <div class="org" title="Stanford University"><sup>5</sup><img src="figures/logos/stanford.svg" alt="Stanford University" style="--h: 42px"></div>
+            <div class="org" title="NVIDIA"><sup>2</sup><img class="lt" src="figures/logos/nvidia.svg" alt="NVIDIA" style="--h: 26px"><img class="dk" src="figures/logos/nvidia-dark.svg" alt="NVIDIA" style="--h: 26px"></div>
+            <div class="org" title="UC Berkeley"><sup>3</sup><img class="lt" src="figures/logos/berkeley.svg" alt="UC Berkeley" style="--h: 24px"><img class="dk" src="figures/logos/berkeley-dark.svg" alt="UC Berkeley" style="--h: 24px"></div>
+            <div class="org" title="MIT"><sup>4</sup><img class="mono" src="figures/logos/mit.svg" alt="MIT" style="--h: 28px"></div>
+            <div class="org" title="Stanford University"><sup>5</sup><img class="lt" src="figures/logos/stanford.svg" alt="Stanford University" style="--h: 42px"><img class="dk" src="figures/logos/stanford-dark.svg" alt="Stanford University" style="--h: 42px"></div>
         </div>
         <p class="notes">
             <span><sup>*</sup>Equal contribution</span><span><sup>&dagger;</sup>Project lead</span><span><sup>&Dagger;</sup>Core contributor</span>
@@ -881,7 +888,13 @@
             btn.title = LABEL[mode];
             document.dispatchEvent(new Event('rax-theme'));
         }
-        btn.addEventListener('click', function() { apply(ORDER[(ORDER.indexOf(current()) + 1) % 3]); });
+        btn.addEventListener('click', function() {
+            var next = ORDER[(ORDER.indexOf(current()) + 1) % 3];
+            /* Crossfade the whole page, including the JS-redrawn charts and swapped logos. */
+            if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.startViewTransition(function() { apply(next); });
+            } else apply(next);
+        });
         btn.setAttribute('data-mode', current());
         btn.title = LABEL[current()];
         btn.setAttribute('aria-label', LABEL[current()]);
