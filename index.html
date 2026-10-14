@@ -14,9 +14,17 @@
     </script>
     <meta name="description" content="RAX: a coding agent learns real robot tasks by exploring online, with no demonstrations and no policy training.">
     <link rel="icon" type="image/svg+xml" href="figures/rax-mark.svg">
+    <link rel="stylesheet" href="assets/css/interactive.css">
+    <script src="assets/js/data.js"></script>
+    <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400;62..125,500;62..125,600;62..125,700;62..125,800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400;62..125,500;62..125,600;62..125,700;62..125,800&family=Unbounded:wght@700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <style>
         /* White page, ink, and the paper's SEAS turquoise (rax.cls). */
         :root {
@@ -30,12 +38,26 @@
             --rule: #dde4e7;
             --faint: #eef2f4;
             --font: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            /* tokens used by the interactive components (assets/css/interactive.css) */
+            --surface: #ffffff; --sunk: #f4f7f8; --ink-2: #4b5862; --line: #dde4e7; --grid: #eef2f4;
+            --rax: #00a3a6; --rax-soft: #dff3f3; --base: #c3ccd2; --base-ink: #66717b;
+            --code: #5b4fcf; --code-soft: #ecebfb; --new: #0e8a5f; --new-soft: #e1f3ea;
+            --warn: #d03b3b; --warn-soft: #fbe9e9; --amber: #c98500;
+            --sk-chair: #2a78d6; --sk-cups: #6250d6; --sk-bucket: #c8641e; --sk-box: #8a6a3c;
+            --ph-1: #00a3a6; --ph-2: #c98500; --ph-3: #0e8a5f; --ph-4: #6250d6;
+            --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace; --sans: var(--font);
         }
         @media (prefers-color-scheme: dark) {
             :root:not([data-theme="light"]) {
                 --bg: #0f1316; --ink: #e6eaed; --head: #f3f6f8; --muted: #95a1aa;
                 --accent: #2cc7c9; --link: #4fd0d2;
                 --card: #182025; --rule: #2b363d; --faint: #1c252b;
+                --surface: #141b20; --sunk: #182025; --ink-2: #b3bec6; --line: #2b363d; --grid: #1c252b;
+                --rax: #2cc7c9; --rax-soft: #12302f; --base: #4b5961; --base-ink: #95a1aa;
+                --code: #9085e9; --code-soft: #252239; --new: #2fb380; --new-soft: #15291f;
+                --warn: #e66767; --warn-soft: #2e1a1a; --amber: #e0a12a;
+                --sk-chair: #4b93ea; --sk-cups: #9085e9; --sk-bucket: #e07d3c; --sk-box: #b8925a;
+                --ph-1: #2cc7c9; --ph-2: #e0a12a; --ph-3: #2fb380; --ph-4: #9085e9;
                 color-scheme: dark;
             }
         }
@@ -44,6 +66,12 @@
             --bg: #0f1316; --ink: #e6eaed; --head: #f3f6f8; --muted: #95a1aa;
             --accent: #2cc7c9; --link: #4fd0d2;
             --card: #182025; --rule: #2b363d; --faint: #1c252b;
+            --surface: #141b20; --sunk: #182025; --ink-2: #b3bec6; --line: #2b363d; --grid: #1c252b;
+            --rax: #2cc7c9; --rax-soft: #12302f; --base: #4b5961; --base-ink: #95a1aa;
+            --code: #9085e9; --code-soft: #252239; --new: #2fb380; --new-soft: #15291f;
+            --warn: #e66767; --warn-soft: #2e1a1a; --amber: #e0a12a;
+            --sk-chair: #4b93ea; --sk-cups: #9085e9; --sk-bucket: #e07d3c; --sk-box: #b8925a;
+            --ph-1: #2cc7c9; --ph-2: #e0a12a; --ph-3: #2fb380; --ph-4: #9085e9;
             color-scheme: dark;
         }
 
@@ -327,6 +355,7 @@
         }
         .sim-tip.on { opacity: 1; transform: translate(-50%, calc(-100% - 12px)); }
         .sim-tip img { width: auto; display: block; }
+        .sim-tip img.dark { box-sizing: content-box; background: #1a1d20; padding: 5px 8px; border-radius: 5px; }
         .sim-tip img + span { padding-left: 10px; border-left: 1px solid #dde4e7; }
         .sim-tip::after {
             content: '';
@@ -342,6 +371,30 @@
         }
         .sim-x { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; margin-top: 12px; }
         .sim-x span { text-align: center; font-weight: 700; font-size: 0.95rem; color: var(--head); }
+        .sim-scroll { overflow-x: auto; scrollbar-width: thin; }
+        .sim-inner { min-width: 0; }
+        #simTabs { margin-bottom: 22px; }
+        .sim.dense .sim-plot, .sim.dense .sim-x { gap: 10px; }
+        .sim.dense .sim-b { width: 46%; max-width: 40px; border-radius: 5px 5px 0 0; }
+        .sim.dense .sim-b b { font-size: 0.72rem; }
+        .sim.dense .sim-b.rax b { font-size: 0.8rem; }
+        .sim.dense .sim-x span { font-size: 0.78rem; line-height: 1.3; }
+
+        /* ---------------- interactive components (.bx) ---------------- */
+        .bx { font-size: 16px; line-height: 1.6; color: var(--ink); }
+        .bx img { display: block; max-width: 100%; }
+        .bx a { color: var(--link); }
+        .bx button { font: inherit; color: inherit; }
+        .bx code, .bx .mono { font-family: var(--mono); font-size: 0.86em; }
+        .bx :focus-visible { outline: 2px solid var(--rax); outline-offset: 2px; border-radius: 4px; }
+        .bx .seg { gap: 8px; margin-bottom: 16px; }
+        .bx .seg button {
+            padding: 8px 15px; border-radius: 6px; border: 1px solid var(--rule);
+            background: none; color: var(--ink); font-weight: 600; font-size: 0.9rem; cursor: pointer;
+        }
+        .bx .seg button:hover { border-color: var(--head); }
+        .bx .seg button[aria-selected="true"] { background: var(--head); border-color: var(--head); color: var(--bg); }
+        .sub-h.first { margin-top: 8px; }
 
         /* ---------------- method ---------------- */
         .figure { background: #fff; border: 1px solid var(--faint); border-radius: 8px; padding: 24px; }
@@ -688,43 +741,79 @@
 
     <section id="sim">
         <h2>Simulation</h2>
+        <div class="tabs" id="simTabs"></div>
         <div class="sim" id="simChart">
             <div class="sim-legend"><span><i></i>Prior SOTA</span><span class="rax"><i></i>RAX</span></div>
-            <div class="sim-plot" id="simPlot"></div>
-            <div class="sim-x" id="simX"></div>
+            <div class="sim-scroll">
+                <div class="sim-inner" id="simInner">
+                    <div class="sim-plot" id="simPlot"></div>
+                    <div class="sim-x" id="simX"></div>
+                </div>
+            </div>
         </div>
     </section>
     <script>
     (function() {
-        /* Success rate (%) vs. the prior state of the art; HumanoidArena uses RAX with three demonstrations. */
-        /* [benchmark, prior SOTA, RAX, prior SOTA method, logo of its first author's first affiliation (none for independent researchers), logo height px] */
-        var DATA = [
+        /* Overview: success rate (%) vs. the prior state of the art; HumanoidArena uses RAX with three demonstrations.
+           [benchmark, prior SOTA, RAX, prior SOTA method, logo of its first author's first affiliation (none for independent researchers), logo height px] */
+        var OVERVIEW = [
             ['RoboDojo Hard Subset', 24.9, 78.3, 'VPP2', 'figures/logos/baselines/robotera.png', 16],
             ['BEHAVIOR-1K', 8.2, 46.5, 'Robot Learning Collective', '', 0],
             ['DexJoCo', 65.3, 96.7, 'ME-Dex', 'figures/logos/baselines/li_auto.svg', 13],
             ['LIBERO-Pro', 63.2, 84.4, 'ASPIRE', 'figures/logos/nvidia.svg', 17],
             ['HumanoidArena', 81.9, 89.8, 'WB-WAM', 'figures/logos/baselines/tsinghua.svg', 24]
         ];
+        var LOGO = {};
+        OVERVIEW.forEach(function(d) { if (d[4]) LOGO[d[3]] = [d[4], d[5]]; });
+        LOGO['ASPIRE (coding agent)'] = LOGO['ASPIRE'];
+        /* best prior method on single tasks; first author's first affiliation.
+           Rex-M1 Preview: its first submitter (FT Lab) could not be identified, so it shows the second, VisIncept. */
+        var B = 'figures/logos/baselines/';
+        LOGO['DECO'] = [B + 'xyz_embodied_ai.png', 12, true];   /* XYZ Embodied AI; white-only logo */
+        LOGO['PointWAM'] = [B + 'postech.svg', 14];
+        LOGO['\u03c00.5'] = [B + 'physical_intelligence.svg', 18];
+        LOGO['DP-C'] = [B + 'columbia.svg', 18];
+        LOGO['Fast-WAM'] = LOGO['WB-WAM'];                       /* Tsinghua University */
+        LOGO['Cosmos Policy'] = LOGO['ASPIRE'];                  /* NVIDIA */
+        LOGO['Simate-beta'] = [B + 'simate.png', 30];
+        LOGO['PhysicalRSI (agent + VLA)'] = [B + 'hku_mmlab.png', 21];
+        LOGO['Rex-M1 Preview'] = [B + 'visincept.png', 18];
+
+        /* Per benchmark (assets/js/data.js, from the paper's tables): each task against the best prior method on it. */
+        var VIEWS = [{name: 'Overview', gains: true, groups: OVERVIEW.map(function(d) {
+            return {label: d[0], prior: d[1], rax: d[2], who: d[3], logo: d[4], h: d[5]};
+        })}];
+        (window.RAX && RAX.benchmarks || []).forEach(function(bm) {
+            VIEWS.push({name: bm.id === 'robodojo' ? 'RoboDojo Hard Subset' : bm.name, gains: false, groups: bm.tasks.map(function(t, i) {
+                var best = null;
+                bm.baselines.forEach(function(b) { var v = b[1][i]; if (v != null && (!best || v > best.v)) best = {name: b[0], v: v}; });
+                var lg = best && LOGO[best.name];
+                return {label: t, prior: best ? best.v : null, rax: bm.rax[i], who: best ? best.name : '', logo: lg ? lg[0] : '', h: lg ? lg[1] : 0, dark: lg ? !!lg[2] : false};
+            })});
+        });
+
         var root = document.getElementById('simChart');
+        var inner = document.getElementById('simInner');
         var plot = document.getElementById('simPlot');
         var xs = document.getElementById('simX');
-        var bars = [];
+        var tabs = document.getElementById('simTabs');
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var seen = false, bars = [];
+        function num(v) { return v >= 99.95 ? '100' : v.toFixed(1); }
+
         var tip = document.createElement('div');
         tip.className = 'sim-tip';
         var tipImg = document.createElement('img');
         tipImg.alt = '';
         var tipName = document.createElement('span');
-        tip.appendChild(tipImg);
         tip.appendChild(tipName);
-        plot.appendChild(tip);
         function hover(g, d) {
-            var prior = g.firstChild;
-            tipName.textContent = d[3];
-            if (d[4]) tip.insertBefore(tipImg, tipName); else if (tipImg.parentNode) tip.removeChild(tipImg);
-            if (d[4]) { tipImg.src = d[4]; tipImg.style.height = d[5] + 'px'; }
-            /* sit above the gain pill, centred on the group */
-            var pr = plot.getBoundingClientRect(), gr = g.getBoundingClientRect();
-            var top = Math.min(prior.getBoundingClientRect().top, g.querySelector('.sim-d').getBoundingClientRect().top);
+            tipName.textContent = d.who;
+            if (d.logo) { tipImg.src = d.logo; tipImg.style.height = d.h + 'px'; tipImg.classList.toggle('dark', !!d.dark); tip.insertBefore(tipImg, tipName); }
+            else if (tipImg.parentNode) tip.removeChild(tipImg);
+            /* sit above the tallest thing in the group, centred on it */
+            var pr = plot.getBoundingClientRect(), gr = g.getBoundingClientRect(), top = gr.bottom;
+            Array.prototype.forEach.call(g.querySelectorAll('.sim-b, .sim-b b, .sim-d'), function(n) { top = Math.min(top, n.getBoundingClientRect().top); });
             var half = tip.offsetWidth / 2 + 4;
             var cx = gr.left + gr.width / 2 - pr.left;
             var left = Math.max(half, Math.min(pr.width - half, cx));
@@ -741,43 +830,75 @@
         }
         plot.addEventListener('mouseleave', unhover);
         document.addEventListener('click', function(e) { if (!plot.contains(e.target)) unhover(); });
-        DATA.forEach(function(d, i) {
-            var g = document.createElement('div');
-            g.className = 'sim-g';
-            [[d[1], ''], [d[2], ' rax']].forEach(function(v, k) {
-                var b = document.createElement('div');
-                b.className = 'sim-b' + v[1];
-                b.style.transitionDelay = (i * 0.12 + k * 0.18) + 's';
-                var t = document.createElement('b');
-                t.textContent = v[0].toFixed(1);
-                t.style.transitionDelay = (i * 0.12 + k * 0.18 + 0.9) + 's';
-                b.appendChild(t);
-                g.appendChild(b);
-                bars.push([b, v[0]]);
-            });
-            var dl = document.createElement('div');
-            dl.className = 'sim-d';
-            dl.textContent = '+' + (d[2] - d[1]).toFixed(1);
-            dl.style.setProperty('--v', d[2] / 100);
-            dl.style.transitionDelay = (i * 0.12 + 1.2) + 's';
-            g.appendChild(dl);
-            g.addEventListener('mouseenter', function() { hover(g, d); });
-            g.addEventListener('click', function() { hover(g, d); });
-            plot.appendChild(g);
-            var x = document.createElement('span');
-            x.textContent = d[0];
-            xs.appendChild(x);
-        });
+
         function grow() {
             root.classList.add('in');
             bars.forEach(function(p) { p[0].style.height = 'calc((100% - 40px) * ' + (p[1] / 100) + ')'; });
         }
-        if (!('IntersectionObserver' in window) || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-            bars.forEach(function(p) { p[0].style.transition = 'none'; p[0].querySelector('b').style.transition = 'none'; });
-            grow();
-        } else {
+        function render(vi) {
+            var v = VIEWS[vi], n = v.groups.length, step = Math.min(0.12, 0.6 / n);
+            unhover();
+            root.classList.remove('in');
+            root.classList.toggle('dense', n > 5);
+            inner.style.minWidth = n > 5 ? (n * 62) + 'px' : '';
+            plot.style.gridTemplateColumns = xs.style.gridTemplateColumns = 'repeat(' + n + ', 1fr)';
+            plot.innerHTML = '';
+            xs.innerHTML = '';
+            plot.appendChild(tip);
+            bars = [];
+            v.groups.forEach(function(d, i) {
+                var g = document.createElement('div');
+                g.className = 'sim-g';
+                [[d.prior, ''], [d.rax, ' rax']].forEach(function(p, k) {
+                    var b = document.createElement('div');
+                    b.className = 'sim-b' + p[1];
+                    if (p[0] == null) { b.style.visibility = 'hidden'; g.appendChild(b); return; }
+                    b.style.transitionDelay = (i * step + k * 0.15) + 's';
+                    var t = document.createElement('b');
+                    t.textContent = num(p[0]);
+                    t.style.transitionDelay = (i * step + k * 0.15 + 0.8) + 's';
+                    b.appendChild(t);
+                    g.appendChild(b);
+                    bars.push([b, p[0]]);
+                });
+                if (v.gains && d.prior != null) {
+                    var dl = document.createElement('div');
+                    dl.className = 'sim-d';
+                    dl.textContent = '+' + (d.rax - d.prior).toFixed(1);
+                    dl.style.setProperty('--v', d.rax / 100);
+                    dl.style.transitionDelay = (i * step + 1.1) + 's';
+                    g.appendChild(dl);
+                }
+                if (d.who) {
+                    g.addEventListener('mouseenter', function() { hover(g, d); });
+                    g.addEventListener('click', function() { hover(g, d); });
+                }
+                plot.appendChild(g);
+                var x = document.createElement('span');
+                x.textContent = d.label;
+                xs.appendChild(x);
+            });
+            Array.prototype.forEach.call(tabs.children, function(b, j) { b.classList.toggle('on', j === vi); });
+            if (reduce) {
+                bars.forEach(function(p) { p[0].style.transition = 'none'; p[0].querySelector('b').style.transition = 'none'; });
+                grow();
+            } else if (seen) {
+                void plot.offsetHeight;  /* start from zero so the bars grow again */
+                requestAnimationFrame(grow);
+            }
+        }
+        VIEWS.forEach(function(v, i) {
+            var b = document.createElement('button');
+            b.className = 'tab';
+            b.textContent = v.name;
+            b.addEventListener('click', function() { render(i); });
+            tabs.appendChild(b);
+        });
+        render(0);
+        if (reduce || !('IntersectionObserver' in window)) { seen = true; grow(); }
+        else {
             var io = new IntersectionObserver(function(es) {
-                if (es[0].isIntersecting) { io.disconnect(); grow(); }
+                if (es[0].isIntersecting) { io.disconnect(); seen = true; grow(); }
             }, {threshold: 0.35});
             io.observe(root);
         }
@@ -787,8 +908,34 @@
     <section id="method">
         <h2>Method</h2>
         <p class="lede">A frozen LLM coding agent drives the robot through its perception and control interfaces. What it learns lives in its workspace: notes, programs and verified skills.</p>
-        <div class="figure">
-            <img src="figures/paper/fig02_architecture.svg" alt="RAX architecture: a frozen-LLM coding agent reads and writes memory, perceives through RGB-D, acts through the robot control SDK, and writes robot programs." loading="lazy">
+        <div class="bx">
+            <div class="card how2" id="howRoot">
+                    <ol class="acts" aria-label="Four acts"></ol>
+                    <div class="cc">
+                        <div class="how-dia">
+                            <svg class="how-svg" role="img" aria-label="The coding agent, its memory, the robot program and the robot, with the connections active at this moment"></svg>
+                            <div class="pl-media">
+                                <video muted playsinline preload="auto" aria-label="Left camera of the air-fryer session"></video>
+                                <span class="pl-tag"></span>
+                                <div class="pl-progress"><span></span></div>
+                                <button type="button" class="pl-btn" aria-label="Pause"><svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+                            </div>
+                        </div>
+                        <div class="cc-side">
+                            <div class="pl-now" aria-live="polite">
+                                <div class="k how-k"></div>
+                                <h3 class="how-h"></h3>
+                                <p class="how-p"></p>
+                                <p class="how-stat"></p>
+                            </div>
+                            <div class="cc-code">
+                                <div class="cc-code-head"></div>
+                                <pre class="cc-pre"></pre>
+                                <div class="cc-feed" hidden></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
         </div>
         <h3 class="sub-h">Exploration compiles into code</h3>
         <div class="speed">
@@ -809,43 +956,40 @@
 
     <section id="cases">
         <h2>Case studies</h2>
-        <div class="tabs" id="caseTabs"></div>
-        <a class="figure case" id="caseLink" href="#" target="_blank" rel="noopener">
-            <img id="caseImg" alt="">
-        </a>
+        <h3 class="sub-h first">Robot rollout sessions</h3>
+        <div class="bx" id="sessRoot">
+            <div class="seg" id="sessTabs"></div>
+            <div class="sess-body"></div>
+        </div>
+        <h3 class="sub-h">3D model built by the agent</h3>
+        <p class="lede">No model of the air fryer was given. From what it measured in its first manual run, the agent wrote an articulated model, a fixed body and a drawer on a prismatic joint, placed it on the point cloud of each new scene, and planned its actions on it. Drag to orbit, scroll to zoom.</p>
+        <div class="bx">
+            <div class="card three" id="fryerRoot">
+                    <div class="three-view">
+                        <div class="loading">Loading the point cloud&hellip;</div>
+                        <span class="hint">Left camera, final run. Points are the camera&rsquo;s depth in the robot&rsquo;s frame.</span>
+                    </div>
+                    <div class="three-side">
+                        <div class="slider">
+                            <label for="fryerOpen">Drawer opening <output id="fryerOpenOut">0.0 cm</output></label>
+                            <input type="range" id="fryerOpen" min="0" max="131" value="0" step="1">
+                        </div>
+                        <p id="fryerStatus" aria-live="polite"></p>
+                        <div class="toggles">
+                            <label><input type="checkbox" data-layer="cloud" checked> Point cloud</label>
+                            <label><input type="checkbox" data-layer="model" checked> <span class="sw" style="--c:#7b3fd1"></span> The agent&rsquo;s model</label>
+                            <label><input type="checkbox" data-layer="actions" checked> <span class="sw" style="--c:#e34948"></span> Planned hand poses</label>
+                        </div>
+                        <dl class="facts">
+                            <dt>c, d</dt><dd>Axis from a circle fit to the lid; pull direction from the handle&rsquo;s points. Estimated in every scene.</dd>
+                            <dt>opening</dt><dd>Measured from the shift of the handle face after the pull.</dd>
+                            <dt>sizes</dt><dd>Radii, heights and handle size, fixed from the agent&rsquo;s own measurements.</dd>
+                            <dt>checks</dt><dd>Every planned motion is checked for clearance against the model at the current opening.</dd>
+                        </dl>
+                    </div>
+                </div>
+        </div>
     </section>
-    <script>
-    (function() {
-        /* Figures from the paper, converted from their source PDFs to vector SVG. */
-        var FIGS = [
-            {file: 'fig04_rby1', name: 'RB-Y1: Tidy Up a Lab Corner', alt: 'A long-horizon task on the real RB-Y1'},
-            {file: 'fig05_boxing', name: 'BEHAVIOR-1K: Boxing Books', alt: 'The program RAX writes for boxing books on BEHAVIOR-1K'},
-            {file: 'fig23_cube_program', name: 'Find the Cube', alt: 'The find-the-cube program'},
-            {file: 'fig24_airfry_program', name: 'Air Fryer', alt: 'The air-fryer program'},
-            {file: 'fig29_wipe_program', name: 'Wipe the Table', alt: 'The wiping program'},
-            {file: 'fig31_peg_program', name: 'Peg-in-Hole', alt: 'The peg-insertion procedure'},
-            {file: 'fig33_bandu_program', name: 'Bandu Tower', alt: 'The Bandu assembly program'}
-        ];
-        var tabs = document.getElementById('caseTabs');
-        var img = document.getElementById('caseImg');
-        var link = document.getElementById('caseLink');
-        function show(i) {
-            var f = FIGS[i], src = 'figures/paper/' + f.file + '.svg';
-            img.src = src;
-            img.alt = f.alt;
-            link.href = src;
-            Array.prototype.forEach.call(tabs.children, function(b, j) { b.classList.toggle('on', j === i); });
-        }
-        FIGS.forEach(function(f, i) {
-            var b = document.createElement('button');
-            b.className = 'tab';
-            b.textContent = f.name;
-            b.addEventListener('click', function() { show(i); });
-            tabs.appendChild(b);
-        });
-        show(0);
-    })();
-    </script>
 
     <section id="abstract" class="side">
         <h2>Abstract</h2>
@@ -889,6 +1033,7 @@
             btn.setAttribute('aria-label', LABEL[mode]);
             btn.title = LABEL[mode];
             document.dispatchEvent(new Event('rax-theme'));
+            window.dispatchEvent(new Event('raxtheme'));
         }
         btn.addEventListener('click', function() {
             var next = ORDER[(ORDER.indexOf(current()) + 1) % 3];
@@ -906,5 +1051,14 @@
     <footer>RAX &mdash; Scaling Online Exploration for Robot Agents</footer>
 
 </div>
+
+<script src="assets/js/boxing.js"></script>
+<script src="assets/js/content.js"></script>
+<script src="assets/js/sessions.js"></script>
+<script src="assets/js/code.js"></script>
+<script src="assets/js/activity.js"></script>
+<script src="assets/js/interactive.js"></script>
+<script src="assets/js/how.js"></script>
+<script type="module" src="assets/js/fryer3d.js"></script>
 </body>
 </html>
