@@ -11,7 +11,34 @@
 
   // Wall-clock times are EDT; each clip lists its segments [start, end, speed].
   var ACTS = [
-    { title: 'Explore with tool calls', sub: 'the agent drives the robot', vid: 'how/a1_explore', when: 'Run 1, 09:19–10:36',
+    // No clip: perceive3d.js rebuilds the 09:19:21 RGB-D frame in 3D and the model the agent fitted to it.
+    // The segments map the 26 s of the act onto the 44 min it took, so each stage lands when its script ran.
+    { id: 'see', title: 'Perceive in 3D', sub: 'depth to points to a model', still: 'assets/img/how/r1_left.jpg', when: 'Run 1, 09:19–10:03', hold: 26000,
+      segs: [['09:19:15', '09:20:40', 10.897], ['09:20:40', '09:25:20', 48.95], ['09:25:20', '09:28:10', 40.865],
+             ['09:28:10', '09:51:20', 445.5], ['09:51:20', '10:03:00', 224.36], ['10:03:00', '10:03:45', 21.63]],
+      text: 'Before it moves, the agent writes its own 3D perception. It lifts the depth of two cameras into the robot’s frame, finds the handle by its dark colour, fits circles to the body slice by slice for the axis, measures the handle’s profile, and checks every candidate grasp for clearance against the model it built.',
+      stat: '44 min and 23 analysis scripts before the first grasp', mode: 'feed', head: 'The agent’s tool calls and its scripts’ output, in step with the 3D view',
+      dia: { on: ['agent', 'robot'], agent: 'perceiving in 3D', prog: 'not written yet', edges: ['down', 'up'], notes: [] },
+      feed: [
+        ['09:19:21', 'call', 'franka_observe()  → left, right, wrist: rgb + depth'],
+        ['09:19:41', 'call', "franka_pixel_to_position(camera='left', pixels=[[690, 250], …])  → 15 points in 3D"],
+        ['09:20:27', 'edit', 'write code/airfry/geom.py: load_frame, backproject, project'],
+        ['09:20:36', 'run', 'python a1.py   # left + right depth → robot frame, height map'],
+        ['09:20:38', 'log', 'left 12919 + right 20896 points above the table, z 0.10–0.42 m'],
+        ['09:25:06', 'run', 'python a2.py   # dark = handle; circle fit to the body per slice'],
+        ['09:25:15', 'log', 'body z[0.14,0.20] center (0.616, -0.214) r=0.116'],
+        ['09:25:15', 'log', 'body z[0.32,0.38] center (0.608, -0.205) r=0.090', 1],
+        ['09:27:43', 'run', 'python a3.py   # handle along the pull direction d = 141°'],
+        ['09:27:51', 'log', 'grip: 0.153–0.179 m out from the axis, z 0.142–0.214 m'],
+        ['09:35:04', 'edit', 'write code/airfry/collide.py: Fryer(c, d, grip, arm), clearance(q)'],
+        ['09:36:18', 'say', '~1 cm between the hand and the handle arm, so the arm-top height matters. Let me measure it properly rather than assume 0.25 m.'],
+        ['09:54:52', 'run', 'python a22.py   # candidate grasps: IK + clearance'],
+        ['10:02:38', 'log', '308 grasps searched; best: tilt 85°, 0.156 m out, z 0.256 m'],
+        ['10:03:20', 'run', 'python a23.py   # approach, grasp, 15 cm pull'],
+        ['10:03:25', 'ok', 'descend and pull: every pose reachable, ≥ 12.4 mm clearance'],
+        ['10:03:39', 'edit', 'memory/PROGRESS.md: grasp analysis, handle is a Γ shape …']
+      ] },
+    { id: 'explore', title: 'Explore with tool calls', sub: 'the agent drives the robot', vid: 'how/a1_explore', when: 'Run 1, 09:19–10:36',
       segs: [['09:19:15', '09:19:45', 10], ['10:03:35', '10:06:20', 48], ['10:18:45', '10:19:30', 18], ['10:26:45', '10:27:35', 20], ['10:30:05', '10:34:15', 100]],
       text: 'The agent itself moves the arm, one tool call at a time: it looks, lines up on the handle, grasps it at 50 N, pulls the drawer, drops the banana in and pushes the drawer shut.',
       stat: '72 min of the agent’s own inference, 262k output tokens', mode: 'feed', head: 'The agent’s tool calls, in step with the clip',
@@ -72,7 +99,13 @@
   var bar = root.querySelector('.pl-progress span'), btn = root.querySelector('.pl-btn');
   var capK = root.querySelector('.how-k'), capH = root.querySelector('.how-h'), capP = root.querySelector('.how-p'), capS = root.querySelector('.how-stat');
   var head = root.querySelector('.cc-code-head'), pre = root.querySelector('.cc-pre'), feedEl = root.querySelector('.cc-feed');
-  var KIND = { call: 'robot', run: 'shell', edit: 'edit', say: 'agent', error: 'stop', ok: 'done' };
+  var KIND = { call: 'robot', run: 'shell', edit: 'edit', say: 'agent', error: 'stop', ok: 'done', log: 'output' };
+  var still = document.createElement('img');
+  still.className = 'pl-still p3-still'; still.alt = ''; still.hidden = true;
+  video.parentNode.insertBefore(still, video.nextSibling);
+  // perceive3d.js is a module and arrives after this script; it reads this state when it is ready
+  RAX.howState = { see: false, k: 0 };
+  function p3(fn, arg) { if (RAX.perceive) RAX.perceive[fn](arg); }
 
   /* ---------- the architecture diagram; the clip sits inside the robot box ---------- */
   var NS = 'http://www.w3.org/2000/svg', svg = root.querySelector('svg.how-svg');
@@ -184,7 +217,29 @@
   function onFeed(a, l, quiet) {
     var kind = l[1], text = l[2], wm = D.wm.slice();
     function remember(x) { wm = [x].concat(wm).slice(0, 2); }
-    if (cur === 0) {
+    if (a.id === 'see') {
+      if (l[3]) return;
+      if (kind === 'call') {
+        remember('→ ' + fname(text));
+        if (!quiet) { packet('down', fname(text)); packet('up', /observe/.test(text) ? 'rgb + depth' : '3D points', false, 550); }
+        setDia({ wm: wm });
+      } else if (kind === 'edit' && /^memory/.test(text)) {
+        remember('→ PROGRESS.md');
+        if (!quiet) packet('write', '');
+        setDia({ wm: wm, on: ['agent', 'mem', 'prog'], notes: ['PROGRESS.md: grasp analysis', 'handle: Γ shape'] });
+      } else if (kind === 'edit') {
+        // geom.py and collide.py become the perception and checks of the program it writes later
+        var f = /(\w+\.py)/.exec(text)[1];
+        remember('→ write ' + f);
+        if (!quiet) packet('code', '');
+        setDia({ wm: wm, on: ['agent', 'robot', 'prog'], prog: 'perception', step: f === 'geom.py' ? 'geom.py' : 'geom.py, collide.py' });
+      } else if (kind === 'run') {
+        remember('→ ' + (/(a\d+\.py)/.exec(text) || ['', 'python'])[1]);
+        setDia({ wm: wm });
+      }
+      return;
+    }
+    if (a.id === 'explore') {
       if (/^request_operator/.test(text)) {
         remember('→ request_operator()');
         if (!quiet) packet('write', '');
@@ -248,7 +303,7 @@
   pre.innerHTML = PROG.lines.map(function (l) { return '<span class="ln">' + (hl(l.t) || ' ') + '</span>'; }).join('');
   var lines = Array.prototype.slice.call(pre.children);
 
-  var cued = 0, cur = 0, playing = !reduced, visible = false, holdTimer = null, t0 = 0, raf = null, feedLines = [], shown = -1, ptr = -1, typed = -1;
+  var cued = 0, cur = 0, playing = !reduced, visible = false, holdTimer = null, t0 = 0, held = 0, raf = null, feedLines = [], shown = -1, ptr = -1, typed = -1;
   // wall-clock seconds at time t of the clip
   function wallAt(a, t) {
     var acc = 0;
@@ -261,15 +316,22 @@
   function render() {
     var a = ACTS[cur];
     acts.forEach(function (b, j) { b.setAttribute('aria-current', j === cur ? 'step' : 'false'); b.classList.toggle('done', j < cur); b.querySelector('i').style.width = j < cur ? '100%' : '0%'; });
-    capK.textContent = 'Act ' + (cur + 1) + ' of 4 · ' + a.when;
+    capK.textContent = 'Act ' + (cur + 1) + ' of ' + ACTS.length + ' · ' + a.when;
     capH.textContent = a.title;
     capP.textContent = a.text;
     capS.textContent = a.stat;
     tag.textContent = a.when;
     video.loop = !!a.hold;
-    var src = 'assets/vid/' + a.vid + '.mp4';
-    if (video.getAttribute('src') !== src) { video.poster = 'assets/vid/' + a.vid + '.jpg'; video.src = src; }
-    else { try { video.currentTime = 0; } catch (e) { /* not loaded yet */ } }
+    // an act with a still has no clip: the 3D view covers it once perceive3d.js is ready
+    still.hidden = !a.still; video.hidden = !!a.still;
+    if (a.still) { still.src = a.still; video.pause(); }
+    else {
+      var src = 'assets/vid/' + a.vid + '.mp4';
+      if (video.getAttribute('src') !== src) { video.poster = 'assets/vid/' + a.vid + '.jpg'; video.src = src; }
+      else { try { video.currentTime = 0; } catch (e) { /* not loaded yet */ } }
+    }
+    RAX.howState.see = a.id === 'see'; RAX.howState.k = 0;
+    p3('show', a.id === 'see');
     pre.hidden = a.mode === 'feed'; feedEl.hidden = a.mode !== 'feed';
     enterAct(a); cued = 0;
     shown = -1; ptr = -1; typed = -1;
@@ -288,6 +350,7 @@
       lines.forEach(function (l) { l.classList.remove('cur', 'on', 'shown'); });
       pre.scrollTop = 0;
     }
+    held = 0;
     progress(0, 0);
     arm();
   }
@@ -295,6 +358,7 @@
     bar.style.width = (k * 100) + '%';
     acts[cur].querySelector('i').style.width = (k * 100) + '%';
     var a = ACTS[cur];
+    if (a.id === 'see') { RAX.howState.k = k; p3('set', k); }
     if (a.mode === 'feed') {
       var w = wallAt(a, t || 0), want = -1;
       a.feed.forEach(function (l, j) { if (hms(l[0]) <= w + 0.5) want = j; });
@@ -324,15 +388,17 @@
     }
   }
   function tickHold(now) {
-    var k = Math.min(1, (now - t0) / ACTS[cur].hold);
-    progress(k);
+    held = Math.min(ACTS[cur].hold, now - t0);
+    var k = held / ACTS[cur].hold;
+    progress(k, held / 1000);
     if (k < 1) raf = requestAnimationFrame(tickHold);
   }
   function arm() {
     clearTimeout(holdTimer); cancelAnimationFrame(raf);
     if (!playing || !visible) { video.pause(); return; }
-    var p = video.play(); if (p && p.catch) p.catch(function () {});
-    if (ACTS[cur].hold) { t0 = performance.now(); raf = requestAnimationFrame(tickHold); holdTimer = setTimeout(next, ACTS[cur].hold); }
+    if (!ACTS[cur].still) { var p = video.play(); if (p && p.catch) p.catch(function () {}); }
+    // a paused hold resumes where it stopped
+    if (ACTS[cur].hold) { t0 = performance.now() - held; raf = requestAnimationFrame(tickHold); holdTimer = setTimeout(next, ACTS[cur].hold - held + (ACTS[cur].still ? 900 : 0)); }
   }
   function next() { go((cur + 1) % ACTS.length); }
   function go(i) { cur = i; render(); }
@@ -341,7 +407,7 @@
   function sync() { btn.classList.toggle('paused', !playing); btn.setAttribute('aria-label', playing ? 'Pause' : 'Play'); }
   btn.addEventListener('click', function () { playing = !playing; sync(); arm(); });
   if ('IntersectionObserver' in window) {
-    new IntersectionObserver(function (es) { var v = es[0].isIntersecting; if (v !== visible) { visible = v; arm(); } }, { threshold: 0.3 }).observe(video);
+    new IntersectionObserver(function (es) { var v = es[0].isIntersecting; if (v !== visible) { visible = v; arm(); } }, { threshold: 0.3 }).observe(video.parentNode);
   } else { visible = true; }
   sync(); render();
 })();

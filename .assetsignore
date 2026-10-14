@@ -10,3 +10,4 @@ wrangler.jsonc
 upload.sh
 _*
 !_redirects
+tools
