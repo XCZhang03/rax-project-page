@@ -1,0 +1,8 @@
+# Files Cloudflare must not upload or serve as part of the site.
+.git
+.claude
+.wrangler
+.gitignore
+.assetsignore
+upload.sh
+_*
