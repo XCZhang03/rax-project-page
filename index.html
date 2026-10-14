@@ -156,15 +156,18 @@
     <section class="block" id="how">
         <div class="wrap">
             <h2>How RAX works</h2>
-            <p class="lead">A coding agent learns a task on a real robot in four acts. Watch it on the air fryer: first the agent drives the arm itself through tool calls; then it writes what worked into a program; when one of the program&rsquo;s checks fails, control comes back to the agent to fix it; in the end the program runs on its own. Each clip is the robot&rsquo;s left camera; below it, what the agent or its program was doing at the same moments.</p>
+            <p class="lead">A coding agent learns a task on a real robot in four acts. Watch it on the air fryer: first the agent drives the arm itself through tool calls; then it writes what worked into a program; when one of the program&rsquo;s checks fails, control comes back to the agent to fix it; in the end the program runs on its own. Each clip is the robot&rsquo;s left camera, set inside the system diagram, which lights up the parts at work and the messages between them; below it, what the agent or its program was doing at the same moments.</p>
             <div class="card how2" id="howRoot">
                 <ol class="acts" aria-label="Four acts"></ol>
                 <div class="cc">
-                    <div class="pl-media">
-                        <video muted playsinline preload="auto" aria-label="Left camera of the air-fryer session"></video>
-                        <span class="pl-tag"></span>
-                        <div class="pl-progress"><span></span></div>
-                        <button type="button" class="pl-btn" aria-label="Pause"><svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+                    <div class="how-dia">
+                        <svg class="how-svg" role="img" aria-label="The coding agent, its memory, the robot program and the robot, with the connections active at this moment"></svg>
+                        <div class="pl-media">
+                            <video muted playsinline preload="auto" aria-label="Left camera of the air-fryer session"></video>
+                            <span class="pl-tag"></span>
+                            <div class="pl-progress"><span></span></div>
+                            <button type="button" class="pl-btn" aria-label="Pause"><svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+                        </div>
                     </div>
                     <div class="cc-side">
                         <div class="pl-now" aria-live="polite">

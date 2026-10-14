@@ -15,6 +15,7 @@
       segs: [['09:19:15', '09:19:45', 10], ['10:03:35', '10:06:20', 48], ['10:18:45', '10:19:30', 18], ['10:26:45', '10:27:35', 20], ['10:30:05', '10:34:15', 100]],
       text: 'The agent itself moves the arm, one tool call at a time: it looks, lines up on the handle, grasps it at 50 N, pulls the drawer, drops the banana in and pushes the drawer shut.',
       stat: '72 min of the agent’s own inference, 262k output tokens', mode: 'feed', head: 'The agent’s tool calls, in step with the clip',
+      dia: { on: ['agent', 'robot', 'mem'], agent: 'exploring', prog: 'not written yet', edges: ['down', 'up', 'write'], notes: [] },
       feed: [
         ['09:19:21', 'call', 'franka_observe()  → left, right, wrist: rgb + depth'],
         ['09:19:41', 'call', "franka_pixel_to_position(camera='left', pixels=[[690, 250], …])"],
@@ -31,11 +32,16 @@
       ] },
     { title: 'Write the program', sub: 'from what worked', vid: 'how/a2_program', when: '10:36–10:44', hold: 7000,
       text: 'It turns what it measured in run 1 into a controller: its own perception, a plan checked before any motion, and the actions that worked. About 1,500 lines of Python, condensed here.',
-      stat: 'Clip: run 2, the first controller takes the handle', mode: 'type' },
+      stat: 'Clip: run 2, the first controller takes the handle', mode: 'type',
+      dia: { on: ['agent', 'mem', 'prog', 'robot'], agent: 'writing the code', prog: 'being written', ver: 'v1', edges: ['read', 'code', 'run', 'runup'],
+        wm: ['← PROGRESS.md, TIPS.md'], notes: ['PROGRESS.md: run 1 done', 'TIPS.md: grasp 50 N'],
+        cues: [[0.03, 'read', ''], [0.3, 'code', ''], [0.62, 'run', 'step_open()'], [0.8, 'run', 'robot.grasp()']] } },
     { title: 'Hand back when unsure', sub: 'a failed check stops it', vid: 'how/a3_unsure', when: 'Run 5, 11:22–11:25',
       segs: [['11:22:30', '11:25:06', 30]],
       text: 'Every check that fails stops the program and returns control to the agent. Here the arm stopped 3.7 mm short of the handle; the agent made that descent tolerant and resumed from the close step.',
       stat: 'Resumed close step: 81 s, handle 1.5 mm from where it began', mode: 'feed', head: 'What happened, in step with the clip',
+      dia: { on: ['agent', 'prog', 'robot'], agent: 'watching', prog: 'running', step: 'step_close()', ver: 'v3', edges: ['run', 'runup', 'unsure', 'code', 'write'],
+        notes: ['RUNS.md: runs 1–4', 'TIPS.md: grasp 50 N'] },
       feed: [
         ['11:22:37', 'call', 'franka_move_joints([…])   # above the handle'],
         ['11:22:52', 'call', 'franka_move_pose([0.391, -0.032, 0.223], timeout_s=15, …)'],
@@ -54,6 +60,8 @@
       segs: [['11:50:07.4', '11:52:55', 12]],
       text: 'The program perceives the fryer anew, plans the whole pull before it moves, opens the drawer, drops the banana, closes it, and checks every step. The arrow follows the line it is running.',
       stat: '178 s unattended; 18–23 s of inference per run, against 72 min in run 1', mode: 'run',
+      dia: { on: ['prog', 'robot'], agent: 'not in the loop', prog: 'running', ver: 'v9', edges: ['run', 'runup'],
+        notes: ['RUNS.md: runs 6, 7 clean', 'TIPS.md: accept < 8 mm'] },
       // seconds after the run start -> line of the condensed program, from the run's own call log
       sched: [[0, 0], [2, 1], [7.6, 2], [9, 3], [11, 4], [12, 5], [13, 6], [14, 7], [15, 9], [18, 10], [25.5, 11], [27, 12], [30, 13],
               [36, 14], [37, 15], [43.6, 16], [48, 17], [52, 18], [61.3, 19], [72, 20], [90, 21], [97.7, 22], [109.6, 23], [111, 24],
@@ -65,6 +73,165 @@
   var capK = root.querySelector('.how-k'), capH = root.querySelector('.how-h'), capP = root.querySelector('.how-p'), capS = root.querySelector('.how-stat');
   var head = root.querySelector('.cc-code-head'), pre = root.querySelector('.cc-pre'), feedEl = root.querySelector('.cc-feed');
   var KIND = { call: 'robot', run: 'shell', edit: 'edit', say: 'agent', error: 'stop', ok: 'done' };
+
+  /* ---------- the architecture diagram; the clip sits inside the robot box ---------- */
+  var NS = 'http://www.w3.org/2000/svg', svg = root.querySelector('svg.how-svg');
+  function sv(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, str, cls, anchor) {
+    var t = sv('text', { x: x, y: y, class: cls || '', 'text-anchor': anchor || 'start' }, parent);
+    t.textContent = str;
+    return t;
+  }
+  function cut(str, n) { return str.length > n ? str.slice(0, n - 1) + '…' : str; }
+  svg.setAttribute('viewBox', '0 0 600 470');
+  var mk = sv('marker', { id: 'howArrow', viewBox: '0 0 8 8', refX: 7, refY: 4, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }, sv('defs', {}, svg));
+  sv('path', { d: 'M0,0 L8,4 L0,8 z', class: 'hw-arrowhead' }, mk);
+  function node(x, y, w, h, cls) {
+    var g = sv('g', { class: 'hw-node ' + cls }, svg);
+    sv('rect', { x: x, y: y, width: w, height: h, rx: 12 }, g);
+    return g;
+  }
+  var gMem = node(10, 14, 168, 128, 'mem');
+  txt(gMem, 24, 38, 'Memory', 'hw-title');
+  txt(gMem, 24, 58, 'Working memory', 'hw-k');
+  var wmT = [txt(gMem, 24, 73, '', 'hw-mono'), txt(gMem, 24, 86, '', 'hw-mono')];
+  txt(gMem, 24, 104, 'Notes · skills', 'hw-k');
+  var noteT = [txt(gMem, 24, 119, '', 'hw-mono'), txt(gMem, 24, 132, '', 'hw-mono')];
+  var gAgent = node(224, 14, 152, 128, 'agent');
+  txt(gAgent, 300, 48, 'Coding agent', 'hw-title inv', 'middle');
+  txt(gAgent, 300, 67, 'frozen LLM', 'hw-sub inv', 'middle');
+  sv('rect', { x: 236, y: 86, width: 128, height: 26, rx: 13, class: 'hw-pill' }, gAgent);
+  var agentS = txt(gAgent, 300, 103, '', 'hw-status inv', 'middle');
+  var gProg = node(422, 14, 168, 128, 'prog');
+  txt(gProg, 436, 38, 'Robot program', 'hw-title');
+  txt(gProg, 436, 58, 'airfry/controller.py', 'hw-mono');
+  var progS = txt(gProg, 436, 86, '', 'hw-status');
+  var progStep = txt(gProg, 436, 106, '', 'hw-mono');
+  var progV = txt(gProg, 436, 128, '', 'hw-mono muted');
+  sv('line', { x1: 10, x2: 590, y1: 160, y2: 160, class: 'hw-boundary' }, svg);
+  txt(svg, 12, 154, 'isolation boundary', 'hw-k muted');
+  txt(svg, 36, 178, 'Franka FR3, 3 RGB-D cameras', 'hw-k');
+  var gRobot = node(36, 184, 480, 277, 'robot');
+  var P = {
+    write: 'M222,64 H180', read: 'M180,92 H222', code: 'M378,56 H420', unsure: 'M420,104 H378',
+    down: 'M280,142 V184', up: 'M320,184 V142', run: 'M548,142 V280 H520', runup: 'M520,330 H576 V142'
+  };
+  var edges = {};
+  Object.keys(P).forEach(function (k) {
+    edges[k] = sv('path', { d: P[k], class: 'hw-edge' + (k === 'unsure' ? ' dashed' : ''), 'marker-end': 'url(#howArrow)' }, svg);
+  });
+  [[201, 56, 'write', 'middle'], [201, 108, 'read', 'middle'], [399, 48, 'code', 'middle'], [399, 120, 'Unsure()', 'middle'],
+   [274, 156, 'calls', 'end'], [326, 156, 'observations', 'start']].forEach(function (l) { txt(svg, l[0], l[1], l[2], 'hw-elab', l[3]); });
+  var runLab = txt(svg, 591, 250, 'program runs alone', 'hw-elab', 'middle');
+  runLab.setAttribute('transform', 'rotate(-90 591 250)');
+  var packets = sv('g', {}, svg);
+  var showDia = window.matchMedia ? !window.matchMedia('(max-width: 560px)').matches : true;
+
+  function packet(key, label, warn, delay) {
+    if (reduced || !showDia) return;
+    if (['write', 'read', 'code', 'unsure'].indexOf(key) >= 0) label = '';
+    setTimeout(function () {
+      var path = edges[key], L = path.getTotalLength();
+      var g = sv('g', { class: 'hw-packet' + (warn ? ' warn' : '') }, packets);
+      sv('circle', { r: 5 }, g);
+      if (label) {
+        var tw = Math.max(40, label.length * 6.3 + 12), left = key === 'down' || key === 'run' || key === 'runup';
+        sv('rect', { height: 18, width: tw, rx: 9, x: left ? -8 - tw : 8, y: -9 }, g);
+        txt(g, left ? -2 - tw : 14, 4, label, 'hw-ptext');
+      }
+      var t0 = performance.now(), dur = 1000;
+      (function step(now) {
+        var k = Math.min(1, (now - t0) / dur);
+        var e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        var p = path.getPointAtLength(e * L);
+        g.setAttribute('transform', 'translate(' + p.x + ',' + p.y + ')');
+        g.setAttribute('opacity', k > 0.85 ? (1 - k) / 0.15 : 1);
+        if (k < 1) requestAnimationFrame(step); else g.remove();
+      })(t0);
+    }, delay || 0);
+  }
+  function fname(str) { var m = /([A-Za-z_][\w.]*)\(/.exec(str); return m ? m[1] + '()' : ''; }
+  var D = {};
+  function setDia(st) {
+    Object.keys(st).forEach(function (k) { D[k] = st[k]; });
+    [['agent', gAgent], ['mem', gMem], ['prog', gProg], ['robot', gRobot]].forEach(function (p) {
+      p[1].classList.toggle('on', D.on.indexOf(p[0]) >= 0);
+    });
+    gAgent.classList.toggle('idle', D.agent === 'not in the loop');
+    agentS.textContent = D.agent;
+    progS.textContent = D.prog;
+    progStep.textContent = D.step || '';
+    progV.textContent = D.ver ? 'version ' + D.ver : '';
+    gProg.classList.toggle('empty', D.prog === 'not written yet');
+    gProg.classList.toggle('warn', !!D.warn);
+    gRobot.classList.toggle('warn', !!D.warn);
+    wmT.forEach(function (t, k) { t.textContent = cut((D.wm || [])[k] || '', 24); });
+    noteT.forEach(function (t, k) { t.textContent = cut((D.notes || [])[k] || '', 24); });
+    Object.keys(edges).forEach(function (k) { edges[k].classList.toggle('live', D.edges.indexOf(k) >= 0); });
+  }
+  function enterAct(a) {
+    packets.innerHTML = '';
+    D = {};
+    setDia({ on: a.dia.on, agent: a.dia.agent, prog: a.dia.prog, step: a.dia.step || '', ver: a.dia.ver || '', warn: false,
+      wm: (a.dia.wm || []).slice(), notes: (a.dia.notes || []).slice(), edges: a.dia.edges });
+  }
+  // a feed line just appeared in act 1 or 3: send it along the edge it travelled
+  function onFeed(a, l, quiet) {
+    var kind = l[1], text = l[2], wm = D.wm.slice();
+    function remember(x) { wm = [x].concat(wm).slice(0, 2); }
+    if (cur === 0) {
+      if (/^request_operator/.test(text)) {
+        remember('→ request_operator()');
+        if (!quiet) packet('write', '');
+        setDia({ wm: wm, agent: 'writing notes', on: ['agent', 'mem'], notes: ['PROGRESS.md: run 1 done', 'TIPS.md: grasp 50 N'] });
+        return;
+      }
+      remember('→ ' + fname(text));
+      if (!quiet) { packet('down', fname(text)); packet('up', /observe|pixel_to/.test(text) ? (/observe/.test(text) ? 'rgb + depth' : '3D point') : '', false, 550); }
+      setDia({ wm: wm });
+      return;
+    }
+    if (l[3]) return;   // continuation of an edit
+    if (kind === 'call') { if (!quiet) { packet('run', fname(text)); packet('runup', '', false, 550); } return; }
+    if (kind === 'error') {
+      if (D.warn) return;
+      if (!quiet) packet('unsure', '', true);
+      remember('← TimeoutError, 3.7 mm');
+      setDia({ wm: wm, warn: true, prog: 'stopped', agent: 'fixing the code', on: ['agent', 'prog', 'mem'] });
+      return;
+    }
+    if (kind === 'edit') {
+      if (!quiet) packet('code', '');
+      remember('→ edit descend_to_grasp');
+      setDia({ wm: wm, ver: 'v4', prog: 'fixed' });
+      return;
+    }
+    if (kind === 'run') {
+      if (!quiet) packet('code', '');
+      remember('→ --steps close --resume');
+      setDia({ wm: wm, warn: false, prog: 'resumed', agent: 'watching', on: ['agent', 'prog', 'robot'] });
+      return;
+    }
+    if (kind === 'ok') {
+      if (!quiet) { packet('runup', 'done'); packet('write', '', false, 700); }
+      remember('← close: ok');
+      setDia({ wm: wm, prog: 'done', on: ['agent', 'prog', 'robot', 'mem'], notes: ['RUNS.md: run 5, resumed', 'TIPS.md: accept < 8 mm'] });
+    }
+  }
+  // act 4: the program line now running
+  function onLine(t) {
+    var top = /^(?:P|r) = (step_\w+)/.exec(t);
+    if (top) setDia({ step: top[1] + '()' });
+    var m = /(per\.\w+|robot\.\w+|descend_to_grasp|view_from|scene_from_frames)\(/.exec(t);
+    if (!m) return;
+    if (/^per\.|scene_from|view_from/.test(m[1])) { packet('run', m[1] === 'view_from' ? 'move to view' : 'observe()'); packet('runup', 'rgb + depth', false, 550); }
+    else packet('run', m[1] + '()');
+  }
   var acts = ACTS.map(function (a, i) {
     var b = document.createElement('button');
     b.type = 'button';
@@ -81,7 +248,7 @@
   pre.innerHTML = PROG.lines.map(function (l) { return '<span class="ln">' + (hl(l.t) || ' ') + '</span>'; }).join('');
   var lines = Array.prototype.slice.call(pre.children);
 
-  var cur = 0, playing = !reduced, visible = false, holdTimer = null, t0 = 0, raf = null, feedLines = [], shown = -1, ptr = -1, typed = -1;
+  var cued = 0, cur = 0, playing = !reduced, visible = false, holdTimer = null, t0 = 0, raf = null, feedLines = [], shown = -1, ptr = -1, typed = -1;
   // wall-clock seconds at time t of the clip
   function wallAt(a, t) {
     var acc = 0;
@@ -104,6 +271,7 @@
     if (video.getAttribute('src') !== src) { video.poster = 'assets/vid/' + a.vid + '.jpg'; video.src = src; }
     else { try { video.currentTime = 0; } catch (e) { /* not loaded yet */ } }
     pre.hidden = a.mode === 'feed'; feedEl.hidden = a.mode !== 'feed';
+    enterAct(a); cued = 0;
     shown = -1; ptr = -1; typed = -1;
     if (a.mode === 'feed') {
       head.textContent = a.head;
@@ -132,10 +300,12 @@
       a.feed.forEach(function (l, j) { if (hms(l[0]) <= w + 0.5) want = j; });
       if (k >= 0.98) want = a.feed.length - 1;
       if (want === shown) return;
+      for (var j0 = Math.max(0, shown + 1); j0 <= want; j0++) onFeed(a, a.feed[j0], want - j0 > 1);
       feedLines.forEach(function (l, j) { l.classList.toggle('shown', j <= want); l.classList.toggle('new', j === want); });
       shown = want;
       if (want >= 0) { var last = feedLines[want]; feedEl.scrollTop = Math.max(0, last.offsetTop - feedEl.offsetTop - feedEl.clientHeight + last.offsetHeight + 12); }
     } else if (a.mode === 'type') {
+      while (cued < a.dia.cues.length && k >= a.dia.cues[cued][0]) { var c0 = a.dia.cues[cued++]; packet(c0[1], c0[2]); if (c0[1] === 'code') setDia({ prog: 'written' }); if (c0[1] === 'run') setDia({ prog: 'running', step: c0[2] }); }
       var n = Math.min(lines.length, Math.ceil(k * 1.15 * lines.length));
       if (n === typed) return;
       lines.forEach(function (l, j) { l.classList.toggle('shown', j < n); });
@@ -144,7 +314,9 @@
     } else {
       var rt = wallAt(a, t || 0) - hms(a.segs[0][0]), q = 0;
       a.sched.forEach(function (s) { if (s[0] <= rt) q = s[1]; });
+      if (k >= 0.99 && D.prog !== 'done') { setDia({ prog: 'done', step: 'every check passed' }); packet('runup', 'done'); }
       if (q === ptr) return;
+      for (var j1 = Math.max(0, ptr + 1); j1 <= q; j1++) if (q - j1 < 2) onLine(PROG.lines[j1].t);
       lines.forEach(function (l, j) { l.classList.toggle('on', j <= q); l.classList.toggle('cur', j === q); });
       ptr = q;
       var c = lines[q];

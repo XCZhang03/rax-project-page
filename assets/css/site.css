@@ -255,7 +255,7 @@ footer { text-align: center; padding: 48px 0 40px; font-size: 0.85rem; color: va
 .hw-node.prog.empty > rect:first-child { stroke-dasharray: 6 5; }
 .hw-node.prog.warn > rect:first-child { stroke: var(--warn); }
 .hw-node.prog.warn .hw-status { fill: var(--warn); }
-.hw-node.robot > rect:first-child { fill: var(--sunk); }
+.hw-node.robot > rect:first-child { fill: none; }
 .hw-pill { fill: rgba(255,255,255,.2); }
 .hw-title { font-size: 15px; font-weight: 800; fill: var(--ink); }
 .hw-sub { font-size: 12px; fill: var(--ink-2); }
@@ -486,6 +486,46 @@ footer { text-align: center; padding: 48px 0 40px; font-size: 0.85rem; color: va
 @media (max-width: 860px) { .acts { grid-template-columns: 1fr 1fr; } .acts li:nth-child(3) { border-left: none; } .acts li:nth-child(n+3) { border-top: 1px solid var(--line); } }
 /* how: a shorter code strip under the video */
 .how2 .cc-pre, .how2 .cc-feed { height: 150px; }
+/* how: the architecture diagram, with the clip inside the robot box */
+.how2 .cc { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+.how-dia { position: relative; margin: 10px 12px 6px; aspect-ratio: 600 / 470; }
+.how-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; pointer-events: none; }
+.how-svg text { font-family: var(--sans); }
+.how-dia .pl-media { position: absolute; left: 7.333%; top: 40.851%; width: 77.333%; height: 55.532%; aspect-ratio: auto; border-radius: 8px; }
+.hw-node { transition: opacity .35s; opacity: .5; }
+.hw-node.on { opacity: 1; }
+.hw-node > rect:first-child { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; transition: stroke .3s; }
+.hw-node.on > rect:first-child { stroke: var(--rax); stroke-width: 2.5; }
+.hw-node.agent > rect:first-child { fill: var(--code); stroke: var(--code); }
+.hw-node.agent.on > rect:first-child { stroke: var(--ink); }
+.hw-node.agent.idle { opacity: .3; }
+.hw-node.prog.empty > rect:first-child { stroke-dasharray: 6 5; }
+.hw-node.prog.warn > rect:first-child { stroke: var(--warn); }
+.hw-node.prog.warn .hw-status { fill: var(--warn); }
+.hw-node.robot > rect:first-child { fill: none; }
+.hw-node.robot.warn > rect:first-child { stroke: var(--warn); }
+.hw-pill { fill: rgba(255,255,255,.2); }
+.hw-title { font-size: 15px; font-weight: 800; fill: var(--ink); }
+.hw-sub { font-size: 12px; fill: var(--ink-2); }
+.hw-k { font-size: 11px; font-weight: 800; fill: var(--rax); }
+.hw-k.muted { fill: var(--muted); font-weight: 700; }
+.hw-mono { font-family: var(--mono) !important; font-size: 10px; fill: var(--ink-2); }
+.hw-mono.muted { fill: var(--muted); }
+.hw-status { font-size: 13px; font-weight: 800; fill: var(--ink); }
+.how-svg .inv { fill: #fff; }
+.how-svg .hw-sub.inv { opacity: .85; }
+.hw-boundary { stroke: var(--base); stroke-width: 1.5; stroke-dasharray: 6 5; }
+.hw-edge { fill: none; stroke: var(--base); stroke-width: 2; transition: stroke .3s; }
+.hw-edge.live { stroke: var(--ink-2); stroke-width: 2.5; }
+.hw-edge.dashed { stroke-dasharray: 5 4; }
+.hw-edge.dashed.live { stroke: var(--warn); }
+.hw-arrowhead { fill: var(--base); }
+.hw-elab { font-size: 10.5px; fill: var(--muted); font-weight: 600; }
+.hw-packet circle, .hw-packet rect { fill: var(--rax); }
+.hw-packet.warn circle, .hw-packet.warn rect { fill: var(--warn); }
+.hw-ptext { fill: #fff; font-family: var(--mono) !important; font-size: 10.5px; font-weight: 600; }
+@media (max-width: 860px) { .how2 .cc { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .how-dia { margin: 0; aspect-ratio: auto; } .how-svg { display: none; } .how-dia .pl-media { position: relative; left: auto; top: auto; width: auto; height: auto; aspect-ratio: 16 / 9; border-radius: 0; } }
 /* what the program computed, beside the clip */
 .cc-viz { margin-top: 10px; }
 .cc-viz-k { font-size: 0.72rem; font-weight: 800; color: var(--code); margin-bottom: 4px; }
