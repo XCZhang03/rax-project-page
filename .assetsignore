@@ -9,3 +9,4 @@ wrangler.jsonc
 .assetsignore
 upload.sh
 _*
+!_redirects
