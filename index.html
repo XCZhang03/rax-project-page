@@ -150,9 +150,10 @@
         .authors a:hover { color: var(--link); }
         sup { font-size: 0.66em; color: var(--accent); margin-left: 1px; font-weight: 600; }
         .orgs { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 40px; margin-top: 22px; }
-        .org { display: flex; align-items: flex-start; gap: 3px; }
+        /* Equal-height slots so the affiliation numbers share one baseline. */
+        .org { --slot: 42px; display: flex; align-items: flex-start; gap: 3px; height: var(--slot); }
         .org sup { font-size: 0.72rem; line-height: 1; }
-        .org img { display: block; width: auto; height: var(--h); }
+        .org img { display: block; width: auto; height: var(--h); align-self: center; }
         /* Dark theme: swap in .dk variants; single-color marks go white. */
         .org img.dk { display: none; }
         @media (prefers-color-scheme: dark) {
@@ -395,6 +396,7 @@
             .nav-links a { font-size: 0.84rem; }
             .brand { gap: 12px; margin-bottom: 20px; }
             .orgs { gap: 14px 26px; }
+            .org { --slot: calc(42px * 0.8); }
             .org img { height: calc(var(--h) * 0.8); }
             .tabs { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px 14px; padding: 0 16px; scrollbar-width: none; }
             .tabs::-webkit-scrollbar { display: none; }
