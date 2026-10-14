@@ -343,6 +343,7 @@
         return '<span class="fl k-' + l[1] + '"><span class="tm">' + (l[3] ? '' : l[0]) + '</span><span class="kd">' + KIND[l[1]] + '</span><span class="tx">' + t + '</span></span>';
       }).join('');
       feedLines = Array.prototype.slice.call(feedEl.children);
+      feedEl.scrollTop = 0;
     } else {
       head.textContent = (a.mode === 'type' ? 'Writing ' : 'Running ') + PROG.file + ' (condensed)';
       pre.classList.toggle('typing', a.mode === 'type');
