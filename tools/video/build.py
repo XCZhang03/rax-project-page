@@ -170,19 +170,18 @@ def luma(path, t0, t1):
 
 
 def sessions():
+    """Start each session video on its first fully faded-in frame of the session itself. The title card went: the
+    page's tab names the task, and a card that cut away after a few seconds read as a flash."""
     for name in SESSIONS:
         src = ROOT / f'orig/{name}.mp4'
-        x = luma(src, 0, 12); t = np.arange(len(x)) / FPS
+        x = luma(src, 0, 14); t = np.arange(len(x)) / FPS
         title = np.median(x[60:180])
-        start = t[np.argmax(x > 0.97 * title)]                                 # title card fully in
-        out_at = t[np.argmax((t > 5) & (x < 0.97 * title))]                   # it starts to fade out
-        content = np.median(x[-30:])
-        back = t[np.argmax((t > out_at + 0.3) & (x > 0.97 * content))]        # the session fully faded in
-        cut = next(k for k in keyframes(src, 40) if k > back + 1)
-        a_len = out_at - start
-        fc = (f'[0:v]fps={FPS},settb=AVTB,split[s0][s1];[s0]trim={start}:{out_at},setpts=PTS-STARTPTS,fps={FPS}[a];'
-              f'[s1]trim={back}:{cut},setpts=PTS-STARTPTS,fps={FPS}[b];'
-              f'[a][b]xfade=transition=fade:duration=0.4:offset={a_len - 0.4},format=yuv420p[v]')
+        dip = t[np.argmax((t > 5) & (x < 0.3 * title))]
+        dip_end = t[np.argmax((t > dip) & (x > 0.3 * title))]
+        settled = np.median(x[(t > dip_end + 0.5) & (t < dip_end + 3)])
+        start = t[np.argmax((t > dip_end) & (x > 0.9 * settled))]
+        cut = next(k for k in keyframes(src, 40) if k > start + 1)
+        fc = f'[0:v]fps={FPS},trim={start}:{cut},setpts=PTS-STARTPTS,fps={FPS},format=yuv420p[v]'
         head = WORK / f'{name}_head.mp4'
         ts = probe(src, 'stream=time_base')['streams'][0]['time_base'].split('/')[1]
         crf = subprocess.run(['strings', '-n', '20', src], capture_output=True, text=True).stdout.split(' crf=')[1].split('.')[0]
@@ -190,9 +189,9 @@ def sessions():
              '-video_track_timescale', ts, head])
         (WORK / f'{name}_cut.json').write_text(json.dumps({'cut': cut}))
         join(head, src, cut, OUT / f'{name}.mp4', ts)
-        print(name, f'title from {start:.2f}, out at {out_at:.2f}, session from {back:.2f}, copy from {cut:.2f}, crf {crf}')
-
-
+        # the tab switch shows this until the video starts, so the switch lands on the frame it plays first
+        run(['ffmpeg', '-v', 'error', '-y', '-i', OUT / f'{name}.mp4', '-frames:v', 1, '-q:v', 3, OUT / f'{name}_first.jpg'])
+        print(name, f'session settled at {start:.2f}, copy from {cut:.2f}, crf {crf}')
 
 def posters():
     """The teaser opens on its title over the grid; each session shows a frame well into the work."""

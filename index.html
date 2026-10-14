@@ -710,7 +710,7 @@
     </section>
     <script>
     (function() {
-        var BASE = 'https://assets.robot-agent-exploration.com/static/tasks/v2/';
+        var BASE = 'https://assets.robot-agent-exploration.com/static/tasks/v3/';
         var VER = '';
         var TASKS = [
             {id: 'rby1', name: 'RB-Y1: Six Chained Tasks'},
@@ -722,9 +722,11 @@
         ];
         var tabs = document.getElementById('taskTabs');
         var video = document.getElementById('taskVideo');
-        function show(i) {
+        /* A frame from the middle of the session is the cover until something plays; a tab switch plays at once,
+           so it shows the first frame instead and the switch lands on what plays. */
+        function show(i, playing) {
             var t = TASKS[i];
-            video.poster = BASE + t.id + '_poster.jpg' + VER;
+            video.poster = BASE + t.id + (playing ? '_first.jpg' : '_poster.jpg') + VER;
             video.src = BASE + t.id + '.mp4' + VER;
             Array.prototype.forEach.call(tabs.children, function(b, j) { b.classList.toggle('on', j === i); });
         }
@@ -732,7 +734,7 @@
             var b = document.createElement('button');
             b.className = 'tab';
             b.textContent = t.name;
-            b.addEventListener('click', function() { show(i); video.play(); });
+            b.addEventListener('click', function() { show(i, true); video.play(); });
             tabs.appendChild(b);
         });
         show(0);
