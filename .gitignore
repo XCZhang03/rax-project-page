@@ -1,0 +1,14 @@
+# Video builds (tools/video) run outside the repo; never commit their inputs, intermediates or outputs.
+# The published teaser and session videos live on R2 (upload.sh), not in git.
+tools/video/*/
+*.mov
+*.MOV
+*.mkv
+*.wav
+*.m4a
+*.mp3
+rax_overview*.mp4
+/static/
+/out/
+/work/
+/orig/

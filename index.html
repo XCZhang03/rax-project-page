@@ -543,8 +543,8 @@
     </div>
 
     <div class="frame main-video" id="overview">
-        <video id="mainVideo" controls preload="metadata" playsinline>
-            <source src="https://assets.robot-agent-exploration.com/static/rax_overview_light_v2.mp4" type="video/mp4">
+        <video id="mainVideo" controls preload="metadata" playsinline poster="https://assets.robot-agent-exploration.com/static/rax_overview_poster.jpg">
+            <source src="https://assets.robot-agent-exploration.com/static/rax_overview_light_v3.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
     </div>
@@ -553,7 +553,7 @@
         var main = document.getElementById('mainVideo');
         var hq = document.createElement('video');
         hq.preload = 'auto';
-        hq.src = 'https://assets.robot-agent-exploration.com/static/rax_overview_v2.mp4';
+        hq.src = 'https://assets.robot-agent-exploration.com/static/rax_overview_v3.mp4';
         hq.addEventListener('canplaythrough', function() {
             var currentTime = main.currentTime;
             var wasPlaying = !main.paused;
@@ -710,8 +710,8 @@
     </section>
     <script>
     (function() {
-        var BASE = 'https://assets.robot-agent-exploration.com/static/tasks/';
-        var VER = '?v=1';
+        var BASE = 'https://assets.robot-agent-exploration.com/static/tasks/v2/';
+        var VER = '';
         var TASKS = [
             {id: 'rby1', name: 'RB-Y1: Six Chained Tasks'},
             {id: 'find_the_cube', name: 'Find the Cube'},
@@ -1049,7 +1049,7 @@
     })();
     </script>
 
-    <footer>RAX &mdash; Scaling Online Exploration for Robot Agents</footer>
+    <footer>RAX &mdash; Scaling Online Exploration for Robot Agents<br>Overview video music: &ldquo;Vanguard&rdquo; and &ldquo;Aphelion&rdquo; by <a href="https://www.scottbuckley.com.au" target="_blank" rel="noopener">Scott Buckley</a>, released under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</footer>
 
 </div>
 
