@@ -757,8 +757,8 @@
         /* Overview: success rate (%) vs. the prior state of the art; HumanoidArena uses RAX with three demonstrations.
            [benchmark, prior SOTA, RAX, prior SOTA method, logo of its first author's first affiliation (none for independent researchers), logo height px] */
         var OVERVIEW = [
-            ['RoboDojo Hard Subset', 24.9, 78.3, 'VPP2', 'figures/logos/baselines/robotera.png', 16],
-            ['BEHAVIOR-1K', 8.2, 46.5, 'Robot Learning Collective', '', 0],
+            ['RoboDojo Hard Subset', 24.9, 78.3, 'VPP2', 'figures/logos/baselines/robotera.png', 16],
+            ['BEHAVIOR-1K Hard Subset', 8.2, 46.5, 'Robot Learning Collective', '', 0],
             ['DexJoCo', 65.3, 96.7, 'ME-Dex', 'figures/logos/baselines/li_auto.svg', 13],
             ['LIBERO-Pro', 63.2, 84.4, 'ASPIRE', 'figures/logos/nvidia.svg', 17],
             ['HumanoidArena', 81.9, 89.8, 'WB-WAM', 'figures/logos/baselines/tsinghua.svg', 24]
@@ -784,7 +784,8 @@
             return {label: d[0], prior: d[1], rax: d[2], who: d[3], logo: d[4], h: d[5]};
         })}];
         (window.RAX && RAX.benchmarks || []).forEach(function(bm) {
-            VIEWS.push({name: bm.id === 'robodojo' ? 'RoboDojo Hard Subset' : bm.name, gains: false, groups: bm.tasks.map(function(t, i) {
+            var HARD = {robodojo: 'RoboDojo Hard Subset', behavior: 'BEHAVIOR-1K Hard Subset'};
+            VIEWS.push({name: HARD[bm.id] || bm.name, gains: false, groups: bm.tasks.map(function(t, i) {
                 var best = null;
                 bm.baselines.forEach(function(b) { var v = b[1][i]; if (v != null && (!best || v > best.v)) best = {name: b[0], v: v}; });
                 var lg = best && LOGO[best.name];
