@@ -185,8 +185,8 @@
     var side = el('div', { class: 'cc-side' });
     var now = el('div', { class: 'pl-now', 'aria-live': 'polite' });
     var nav = el('div', { class: 'cc-nav' });
-    side.appendChild(now);
-    var left = el('div', { class: 'cc-left' }, [media, nav]);
+    side.appendChild(now); side.appendChild(nav);
+    var left = el('div', { class: 'cc-left' }, [media]);
     box.appendChild(left); box.appendChild(side);
     var dots = [];
     groups.forEach(function (g, gi) {

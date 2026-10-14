@@ -484,8 +484,13 @@ footer { text-align: center; padding: 48px 0 40px; font-size: 0.85rem; color: va
 .cc-feed .k-log .kd { color: var(--muted); }
 .cc-feed .k-log .tx { color: var(--ink-2); }
 @media (max-width: 860px) { .acts { grid-template-columns: 1fr 1fr; } .acts li:nth-child(3) { border-left: none; } .acts li:nth-child(n+3) { border-top: 1px solid var(--line); } }
-/* how: a shorter code strip under the video */
-.how2 .cc-pre, .how2 .cc-feed { height: 150px; }
+/* how: the code panel fills the right column under the text */
+.how2 .cc-side .cc-code { flex: 1 1 0; min-height: 210px; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.how2 .cc-side .cc-code-head { padding: 6px 12px; font-size: 0.74rem; }
+.how2 .cc-pre, .how2 .cc-feed { flex: 1 1 0; height: auto; min-height: 0; font-size: 0.7rem; }
+.how2 .cc-pre .ln, .how2 .cc-feed .fl { padding-left: 12px; padding-right: 12px; }
+.how2 .cc-feed .fl { grid-template-columns: 8.5ch 5.5ch 1fr; gap: 8px; }
+@media (max-width: 860px) { .how2 .cc-pre, .how2 .cc-feed { flex: none; height: 200px; } }
 /* how: the architecture diagram, with the clip inside the robot box */
 .how2 .cc { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
 .how-dia { position: relative; margin: 10px 12px 6px; aspect-ratio: 600 / 470; }
