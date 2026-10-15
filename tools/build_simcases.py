@@ -25,6 +25,11 @@ for stage in map(Path, sys.argv[1:]):
             for l in ch['lines']:
                 l['time'] = edt(l['time'])
         d['activity_tz'] = 'edt'
+    for st in d['program']['steps']:                                # the widget prefixes assets/img/ itself
+        for v in st.get('viz') or []:
+            v['img'] = v['img'].removeprefix('img/')
+        if st.get('img'):
+            st['img'] = st['img'].removeprefix('img/')
     cases[key] = d
 js = ('// Simulation case studies in the rollout-sessions widget, in the same form as the real-robot tasks.\n'
       '// Built by tools/build_simcases.py from the session archives; merged into the tables the widget reads.\n'
