@@ -545,6 +545,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
                 Skills
             </a>
+            <a class="btn" href="https://huggingface.co/datasets/robot-agent-exploration/robot-session-logs" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                Session logs
+            </a>
             <a class="btn" href="#tasks">
                 <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="7 4 20 12 7 20"/></svg>
                 Robot videos
@@ -712,7 +716,7 @@
 
     <section id="tasks">
         <h2>Real-robot sessions</h2>
-        <p class="lede">Each video is one full session. The agent explores on the real robot, fixes its own mistakes, and turns what works into programs. No demonstrations, no teleoperation, no policy training.</p>
+        <p class="lede">Each video is one full session. The agent explores on the real robot, fixes its own mistakes, and turns what works into programs. No demonstrations, no teleoperation, no policy training. The raw logs of every session, with the agent's transcripts, robot tool calls, state logs and camera recordings, are on <a href="https://huggingface.co/datasets/robot-agent-exploration/robot-session-logs" target="_blank" rel="noopener">Hugging Face</a>.</p>
         <div class="tabs" id="taskTabs"></div>
         <div class="frame">
             <video id="taskVideo" controls preload="none" playsinline></video>
