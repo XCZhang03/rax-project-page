@@ -356,3 +356,5 @@
 }
 @media (max-width: 860px){.bx .how2 .cc-feed .fl {grid-template-columns: 8.5ch 1fr;}
 }
+/* the player's video and the act-1 still are swapped with the hidden attribute; .pl-still's display:block must not override it */
+.bx .pl-media [hidden] {display: none !important;}
